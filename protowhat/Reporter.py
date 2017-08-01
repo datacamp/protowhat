@@ -32,10 +32,13 @@ class Reporter(object):
         the state of the reporter changes and the feedback is kept.
         """
 
-        testobj = Test(testobj) if isinstance(testobj, str) else testobj
-
         if isinstance(testobj, str):
-            raise TestFail(Feedback(testobj))
+            self.failed_test = True
+            self.feedback = Feedback(testobj)
+            if highlight:
+                self.feedback = Feedback(self.feedback.message, highlight)
+
+            raise TestFail(self.feedback)
         else: 
             testobj()    # run function for side effects
 
