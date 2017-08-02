@@ -13,7 +13,7 @@ with open('protowhat/__init__.py', 'rb') as f:
 setup(
 	name='protowhat',
 	version=version,
-	packages=['protowhat'],
+	packages=['protowhat', 'protowhat.checks'],
 	install_requires=['markdown2'],
         description = 'Submission correctness tests for all the things',
         author = 'Michael Chow',
