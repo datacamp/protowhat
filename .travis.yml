@@ -1,0 +1,16 @@
+language: python
+python:
+- '3.5'
+install:
+- pip install .
+script: py.test
+deploy:
+  provider: pypi
+  user: machow
+  password:
+    secure: ftl6TM7i+58SoX8564VmMtI+sz9FOq39BHHXfMNdR0VgD4rHFfsJvv04sIfu4B8U+P2lu9bY0GkoxwIQiManjx5wh/D4dDdvhuPGIYo95R67H1KTUc71JNmIfY9uFZdjwBuK2rr9GInPGDAWNuuiT9XqcFklV19mow7KcdTrMMmBFXO66awfz+aMM+0uFo9VzE0QJrK8wuROsscxSokszLtQ16wgC/AL/J+V68voIA50PoxsZvwj9gOXeSMrdMtVWZsEXwUJGKG9K7cFfWKIuoyPmsvZh9KOYJa4k2STjqD7Ju+jDcir8VpKVA9byJ+IXAlKx6YwHkVHafJtinQO8DbiCGcZBcwYfHVMSQUKTNZm2tVYr698DrG4ikSLhxTJwHSHhXKSFASxL/sQsSG3ctErA2KbgcVIHVMFZvLV1lR64qeG9+SQNsijn9aD6ElC9bLpxAAxa+vtzlLWcGamZ7sEFVRY0e4V3KDdU+RRl77tPxrh9folOjxsGAmgTwm49rlQas/V9priDZEpvkMUMY0KWF0hJV7ldoh8HpzwWoYVAhjhtKsiEDXKpR6YfM9b1RrPpoEnzlwT2J5pxfFE4jrOaTUewjmdSNrI7ERbaxX3I6SujYROP/KboIvldhRiKC/21ymGIug2zX89bQDb6knyFkAPsJ4M/1OHUyc3M8M=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: datacamp/protowhat
+  skip_upload_docs: true
