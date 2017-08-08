@@ -26,7 +26,7 @@ def multi(state, *args):
             Ex().check_node('SelectStmt', 0) \
                 .multi(check_field('where_clause'), check_field('limit_clause'))
 
-    :Note:
+    Note:
         This function could be thought as an AND statement, since all tests it runs must pass
 
     """
