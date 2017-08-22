@@ -24,10 +24,11 @@ class AstNode(AST):
 
 
 class AstModule:
-    def __init__(self, parse, ParseError = Exception, classes = None):
+    def __init__(self, parse, ParseError = Exception, classes = None, AstNode = AstNode):
         self.parse = parse
         self.classes = classes or {}
         self.ParseError = ParseError
+        self.AstNode = AstNode
 
     def load(self, node):
         if not isinstance(node, dict): return node        # return primitives
@@ -47,6 +48,13 @@ class AstModule:
     def _instantiate_node(self, type_str):
         cls = self.classes.get(type_str, None)
         if not cls:
-            cls = self.classes[type_str] = type(type_str, (AstNode,), {})
+            cls = type(type_str, (AstNode,), {})
+            self.classes[type_str] = cls
 
         return cls()
+
+    @classmethod
+    def from_parse_dict(cls, parse):
+        obj = cls(None)
+        obj.parse = lambda cmd, strict: obj.load(parse(cmd, strict))
+        return obj
