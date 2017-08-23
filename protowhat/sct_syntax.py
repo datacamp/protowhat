@@ -135,6 +135,7 @@ class ExGen:
 
         return Chain(state or self.root_state, attr_scts = self.attr_scts)
 
+Ex = ExGen(None, {})
 
 def create_sct_context(State, sct_dict, root_state = None):
     state_dec = state_dec_gen(State, sct_dict)
