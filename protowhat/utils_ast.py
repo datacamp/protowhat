@@ -22,13 +22,15 @@ class AstNode(AST):
         args = ", ".join("{} = {}".format(k, v) for k, v in field_reps)
         return "{}({})".format(self.__class__.__name__, args)
 
-
 class AstModule:
-    def __init__(self, parse, ParseError = Exception, classes = None, AstNode = AstNode):
-        self.parse = parse
+    def __init__(self, parse = None, ParseError = Exception, classes = None, AstNode = AstNode):
+        if parse: self.parse = parse
         self.classes = classes or {}
         self.ParseError = ParseError
         self.AstNode = AstNode
+
+    def parse(self, code, strict):
+        raise NotImplemented("This method needs to be defined in subclass.")
 
     def load(self, node):
         if not isinstance(node, dict): return node        # return primitives
