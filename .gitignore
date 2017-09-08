@@ -3,6 +3,8 @@
 *.class
 # Vim swapfiles
 .*.swp
+# Emacs backup files
+*~
 
 # Python ----------------------------------------------------------------------
 # Byte-compiled / optimized / DLL files
@@ -74,4 +76,3 @@ target/
 
 # Mac stuff -------------------------------------------------------------------
 .DS_Store
-tests/.DS_Store
