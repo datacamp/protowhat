@@ -1,2 +1,3 @@
 pytest
 bashlex
+markdown2
