@@ -30,6 +30,8 @@ class AstModule:
         self.ParseError = ParseError
         self.AstNode = AstNode
 
+    # methods below are for creating an AstModule instance from a dictionary --
+
     def load(self, node):
         if not isinstance(node, dict): return node        # return primitives
 

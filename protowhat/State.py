@@ -1,11 +1,17 @@
 from copy import copy
 import inspect
 
+class DummyParser:
+    def __init__(self):
+        self.ParseError = Exception
+
+    def parse(self, *args, **kwargs): return self.ParseError()
+
 class Dispatcher:
     @classmethod
     def from_dialect(cls):
         # TODO return something with a parse method
-        return None
+        return DummyParser()
 
 class State:
     def __init__(self,
