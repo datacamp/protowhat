@@ -32,6 +32,8 @@ class AstModule:
     def parse(self, code, strict):
         raise NotImplemented("This method needs to be defined in subclass.")
 
+    # methods below are for creating an AstModule instance from a dictionary --
+
     def load(self, node):
         if not isinstance(node, dict): return node        # return primitives
 
