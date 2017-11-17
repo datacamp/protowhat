@@ -25,6 +25,7 @@ class State:
                  reporter,
                  solution_ast = None,
                  student_ast = None,
+                 fname = None,
                  ast_dispatcher = None,
                  history = tuple()):
 
