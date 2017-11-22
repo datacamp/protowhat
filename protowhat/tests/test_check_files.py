@@ -16,7 +16,7 @@ ast.Expr._get_field_names = lambda self: self._fields
 DUMMY_NODES = {'Expr': ast.Expr}
 
 class ParseHey:
-    ParseError = Exception
+    ParseError = SyntaxError
 
     def parse(self, code, *args, **kwargs): return ast.parse(code)
 
@@ -42,6 +42,13 @@ def state():
         student_conn = None, solution_conn = None,
         ast_dispatcher = Dispatcher(DUMMY_NODES, ParseHey())
         )
+
+def test_initial_state():
+    State(student_code = {'script.py': '1'}, solution_code = {'script.py': '1'},
+          reporter = Reporter(), pre_exercise_code = "",
+          student_result = "", solution_result = "",
+          student_conn = None, solution_conn = None,
+          ast_dispatcher = Dispatcher(DUMMY_NODES, ParseHey()))
 
 def test_check_file_use_fs(state, tf):
     state.solution_code = { tf.name: '3 + 3' }
