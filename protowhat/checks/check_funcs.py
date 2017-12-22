@@ -7,9 +7,15 @@ def requires_ast(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         state = kwargs.get('state', args[0] if len(args) else None)
+        state_ast = [state.student_ast, state.solution_ast]
+
+        # fail if no ast parser in use
+        if any(ast is None for ast in state_ast): 
+            raise TypeError("Trying to use ast, but it is None. Are you using a parser?")
+
+        # check whether the parser passed or failed for some code
         ParseError = state.ast_dispatcher.ParseError
 
-        state_ast = [state.student_ast, state.solution_ast]
         parse_fail = any(isinstance(ast, ParseError) for ast in state_ast)
 
         if parse_fail: return state              # skip test

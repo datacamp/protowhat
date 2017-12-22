@@ -25,6 +25,7 @@ class State:
                  reporter,
                  solution_ast = None,
                  student_ast = None,
+                 fname = None,
                  ast_dispatcher = None,
                  history = tuple()):
 
@@ -37,8 +38,10 @@ class State:
         # Parse solution and student code
         # solution code raises an exception if can't be parsed
         if self.ast_dispatcher:
-            if self.solution_ast is None: self.solution_ast = self.ast_dispatcher.parse(self.solution_code)
-            if self.student_ast  is None: self.student_ast  = self.ast_dispatcher.parse(self.student_code)
+            if isinstance(self.solution_code, str) and self.solution_ast is None:
+                self.solution_ast = self.ast_dispatcher.parse(self.solution_code)
+            if isinstance(self.student_code, str) and self.student_ast is None:
+                self.student_ast  = self.ast_dispatcher.parse(self.student_code)
 
         self._child_params = inspect.signature(State.__init__).parameters
 

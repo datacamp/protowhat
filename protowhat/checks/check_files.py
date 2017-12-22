@@ -1,0 +1,56 @@
+from pathlib import Path
+from collections.abc import Mapping
+
+def check_file(state, fname,
+               msg = "Did you create a file named `{}`?",
+               msg_is_dir = "Want to check a file named `{}`, but found a directory.",
+               parse = True,
+               use_fs = False,
+               use_solution = True
+               ):
+    """Test whether file exists, and make its contents the student code.
+    
+    Note: this SCT fails if the file is a directory.
+    """
+
+    if use_fs:
+        p = Path(fname)
+        if not p.exists(): state.do_test(msg.format(fname))          # test file exists
+        if     p.is_dir(): state.do_test(msg_is_dir.format(fname))   # test its not a dir
+
+        code = p.read_text()
+    else:
+        code = _get_fname(state, 'student_code', fname)
+
+        if code is None: state.do_test(msg.format(fname))           # test file exists
+
+    sol_kwargs = {'solution_code': None, 'solution_ast': None}
+    if use_solution:
+        sol_code = _get_fname(state, 'solution_code', fname)
+        if sol_code is None: raise Exception("Solution code does not have file named: %s" % fname)
+        sol_kwargs['solution_code'] = sol_code
+        sol_kwargs['solution_ast'] = state.ast_dispatcher.parse(sol_code) if parse else None
+
+    return state.to_child(
+                student_code = code,
+                student_ast  = state.ast_dispatcher.parse(code) if parse else None,
+                fname = fname,
+                **sol_kwargs
+                )
+
+def _get_fname(state, attr, fname):
+    code_dict = getattr(state, attr)
+    if not isinstance(code_dict, Mapping):
+        raise TypeError("Can't get {} from state.{}, which must be a "
+                        "dictionary or Mapping.")
+
+    return code_dict.get(fname)
+
+
+def test_dir(state, fname, msg = "Did you create a directory named `{}`?"):
+    """Test whether a directory exists."""
+    if not Path(fname).is_dir():
+        state.do_test(msg.format(fname))
+
+    return state
+
