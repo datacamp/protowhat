@@ -8,7 +8,8 @@ commands :
 
 ## test     : run tests.
 test :
-	python -m pytest
+	pytest --cov=protowhat
+	codecov
 
 ## clean    : clean up junk files.
 clean :

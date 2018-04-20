@@ -1,2 +1,4 @@
 pytest
+codecov
+pytest-cov
 bashlex

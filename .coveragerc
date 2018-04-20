@@ -1,0 +1,3 @@
+[run]
+source=protowhat
+omit=*tests*
