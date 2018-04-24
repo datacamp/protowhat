@@ -164,7 +164,6 @@ def test_student_typed(state, text, msg="Submission does not contain the code `{
             where = Ex().check_node('SelectStmt', 0).check_field('where_clause')
             where.test_student_typed(text = "id < 10)
 
-
     """
     stu_ast = state.student_ast
     stu_code = state.student_code

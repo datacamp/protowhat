@@ -44,6 +44,42 @@ def multi(state, *args):
     # return original state, so can be chained
     return state
 
+def test_not(state, *args, msg):
+    """Run multiple subtests that should fail. If all subtests fail, returns original state (for chaining)
+
+    Args:
+        state: State instance describing student and solution code. Can be omitted if used with Ex().
+        args: one or more sub-SCTs to run.
+    :Example:
+        Thh SCT below runs two test_student_typed cases.. ::
+
+            Ex().multi(test_student_typed('INNER'), test_student_typed('OUTER'))
+
+        If students use INNER (JOIN) or OUTER (JOIN) in their code, this test will fail.
+
+    Note:
+        This function can be thought as a NOT(x OR y OR ...) statement, since all tests it runs must fail
+        This function can be considered a direct counterpart of multi.
+
+    """
+
+    for arg in args:
+        # when input is a single test, make iterable
+        if callable(arg): arg = [arg]
+
+        for test in arg:
+            # assume test is function needing a state argument
+            # partial state so reporter can test
+            closure = partial(test, state)
+            try:
+                state.do_test(closure)
+            except TestFail:
+                continue # it fails, as expected
+            return state.do_test(msg)
+
+    # return original state, so can be chained
+    return state
+
 def extend(state, *args):
     for arg in args:
         # when input is a single test, make iterable
