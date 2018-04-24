@@ -58,8 +58,9 @@ def test_not(state, *args, msg):
         If students use INNER (JOIN) or OUTER (JOIN) in their code, this test will fail.
 
     Note:
-        This function can be thought as a NOT(x OR y OR ...) statement, since all tests it runs must fail
-        This function can be considered a direct counterpart of multi.
+        - This function is currently only tested in working with test_student_typed in the subtests.
+        - This function can be thought as a NOT(x OR y OR ...) statement, since all tests it runs must fail
+        - This function can be considered a direct counterpart of multi.
 
     """
 
