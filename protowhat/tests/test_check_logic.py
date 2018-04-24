@@ -17,6 +17,7 @@ def state():
         student_conn = None, solution_conn = None)
 
 def fails(state, msg=""): 
+    state.reporter.failed_test = True
     state.reporter.feedback.msg = msg
     raise TF
 
@@ -58,9 +59,11 @@ def test_test_or_fail(state):
 
 def test_test_not_pass(state):
     cl.test_not(state, fails, msg='fail')
+    assert not state.reporter.failed_test
 
 def test_test_not_pass_2(state):
     cl.test_not(state, [fails, fails], msg='fail')
+    assert not state.reporter.failed_test
 
 def test_test_not_fail(state):
     with pytest.raises(TF):

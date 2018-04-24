@@ -74,7 +74,9 @@ def test_not(state, *args, msg):
             try:
                 state.do_test(closure)
             except TestFail:
-                continue # it fails, as expected
+                # it fails, as expected, so straighten reporter
+                state.reporter.failed_test = False
+                continue
             return state.do_test(msg)
 
     # return original state, so can be chained
