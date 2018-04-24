@@ -17,6 +17,7 @@ def state():
         student_conn = None, solution_conn = None)
 
 def fails(state, msg=""): 
+    state.reporter.failed_test = True
     state.reporter.feedback.msg = msg
     raise TF
 
@@ -55,6 +56,29 @@ def test_test_or_pass(state):
 
 def test_test_or_fail(state):
     with pytest.raises(TF): cl.test_or(state, fails, fails)
+
+def test_test_not_pass(state):
+    cl.test_not(state, fails, msg='fail')
+    assert not state.reporter.failed_test
+
+def test_test_not_pass_2(state):
+    cl.test_not(state, [fails, fails], msg='fail')
+    assert not state.reporter.failed_test
+
+def test_test_not_fail(state):
+    with pytest.raises(TF):
+        cl.test_not(state, passes, msg='fail')
+        assert state.reporter.feedback.message == 'fail'
+
+def test_test_not_fail_2(state):
+    with pytest.raises(TF):
+        cl.test_not(state, [passes, fails], msg='fail')
+        assert state.reporter.feedback.message == 'fail'
+
+def test_test_not_fail_3(state):
+    with pytest.raises(TF):
+        cl.test_not(state, [fails, passes], msg='fail')
+        assert state.reporter.feedback.message == 'fail'
 
 def test_test_correct_pass(state):
     cl.test_correct(state, passes, fails)
