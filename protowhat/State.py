@@ -7,12 +7,6 @@ class DummyParser:
 
     def parse(self, *args, **kwargs): return self.ParseError()
 
-class Dispatcher:
-    @classmethod
-    def from_dialect(cls):
-        # TODO return something with a parse method
-        return DummyParser()
-
 class State:
     def __init__(self,
                  student_code,
@@ -46,8 +40,7 @@ class State:
         self._child_params = inspect.signature(State.__init__).parameters
 
     def get_dispatcher(self):
-        # MCE doesn't always have connection - fallback on postgresql
-        return Dispatcher.from_dialect()
+        return DummyParser()
         
     def get_ast_path(self):
         rev_checks = filter(lambda x: x['type'] in ['check_field', 'check_node'], reversed(self.history))
