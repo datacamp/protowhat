@@ -12,7 +12,7 @@ This documentation takes a deeper dive into the chaining syntax employed for SCT
 contains reference documentation of all relevant SCT functions.
 If you are new to writing SCSTs for SQL or Shell exercises,
 read the Syntax section below first before embarking onto
-the reference documentation or the ```sqlwhat`` (`link <https://sqlwhat.readthedocs.io>`_) and ``shellwhat`` (`link <https://shellwhat.readthedocs.io>`_) dedicated docs.
+the reference documentation or the ``sqlwhat`` (`link <https://sqlwhat.readthedocs.io>`_) and ``shellwhat`` (`link <https://shellwhat.readthedocs.io>`_) dedicated docs.
 
 Syntax
 ======
