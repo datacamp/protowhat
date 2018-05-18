@@ -6,7 +6,7 @@ used for writing Submission Correctness Tests SCTs for interactive Shell and SQL
 It contains shared functionality related to SCT syntax and selectors, state manipulation and commonly used functions.
 
 - If you are new to teaching on DataCamp, check out https://authoring.datacamp.com.
-- If you want to learn what SCTs are and how they work, visit https://authoring.datacamp.com/courses/sct.html.
+- If you want to learn what SCTs are and how they work, visit `this article <https://authoring.datacamp.com/courses/exercises/technical-details/sct.html>`_ specifically.
 
 This documentation takes a deeper dive into the chaining syntax employed for SCTs and
 contains reference documentation of all relevant SCT functions.
