@@ -210,9 +210,8 @@ def has_equal_ast(state,
 
         Then the following SCT makes sure ``id > 1`` was used somewhere in the WHERE clause.::
 
-            
-            Ex().check_node('SelectStmt') \
-                .check_field('where_clause') \
+            Ex().check_node('SelectStmt') \\
+                .check_field('where_clause') \\/
                 .has_equal_ast(sql = 'id > 1', start='expression', exact=False)
         
     """

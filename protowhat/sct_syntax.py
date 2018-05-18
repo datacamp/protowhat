@@ -110,25 +110,17 @@ class ExGen:
         
             ::
                 
-                # life without Ex
-                state = SomeStateProducingFunction()
-                test_student_typed(state, text="SELECT id")    # some SCT, w/state as first arg
-
-                # life with Ex
-                state = SomeStateProducingFunction()
-                Ex(state).test_student_typed(text="SELECT id")      # some SCT, w/o state as arg
-
-                # life writing SCTs on DataCamp.com
-                Ex().test_student_typed(text="SELECT id")
-                
-            Further, note that the operator ``>>`` can be used in place of chaining.::
-
-                # Ex with chaining
+                # How to write SCT on DataCamp.com
                 Ex().test_student_typed(text="SELECT id")
 
-                # Ex without
-                Ex() >> test_student_typed(text="SELECT id")
-                
+                # Experiment locally - chain off of Ex(), created from state
+                state = SomeStateProducingFunction()
+                Ex(state).test_student_typed(text="SELECT id")
+
+                # Experiment locally - no Ex(), create and pass state explicitly
+                state = SomeStateProducingFunction()
+                test_student_typed(state, text="SELECT id")
+
         """
         if state is None and self.root_state is None:
             raise Exception("explicitly pass state to Ex, or set Ex.root_state")
