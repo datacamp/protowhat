@@ -31,7 +31,7 @@ For SCT functions related to checking results and output, consult the docs of ``
 Abastract Syntax tree (AST)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The abstract syntax tree is a parsed tree representations of a code submission. To better understand what this means, visit `this AST viewer app <https://ast-viewer.new.datacamp.com>`_
+The abstract syntax tree is a parsed tree representations of a code submission. To better understand what this means, visit `this AST viewer app <https://ast-viewer.datacamp.com>`_
 In editor mode, you can include a snippet of code, specify the parser it should use, and generate the parse tree. As an example, this PostgreSQL code
 
 .. code:: sql
