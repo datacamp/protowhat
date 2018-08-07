@@ -47,7 +47,7 @@ def _get_fname(state, attr, fname):
     return code_dict.get(fname)
 
 
-def test_dir(state, fname, msg = "Did you create a directory named `{}`?"):
+def has_dir(state, fname, msg = "Did you create a directory named `{}`?"):
     """Test whether a directory exists."""
     if not Path(fname).is_dir():
         state.do_test(msg.format(fname))

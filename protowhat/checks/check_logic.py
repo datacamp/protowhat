@@ -2,13 +2,13 @@ from protowhat.Test import TestFail
 from types import GeneratorType
 from functools import partial
 
-def fail(state, msg=""):
+def fail(state, msg="fail"):
     """Always fails the SCT, with an optional msg."""
     state.do_test(msg)
 
     return state
 
-def multi(state, *args):
+def multi(state, *tests):
     """Run multiple subtests. Return original state (for chaining).
 
     Args:
@@ -17,86 +17,76 @@ def multi(state, *args):
 
     
     :Example:
-        The SCT below runs run two test_student_typed cases.. ::
+        The SCT below runs run two has_code cases.. ::
 
-            Ex().multi(test_student_typed('SELECT'), test_student_typed('WHERE'))
+            Ex().multi(has_code('SELECT'), has_code('WHERE'))
 
         The SCT below checks that a SELECT statement has both a WHERE and LIMIT clause.. ::
 
-            Ex().check_node('SelectStmt', 0) \\
-                .multi(check_field('where_clause'),
-                       check_field('limit_clause'))
+            Ex().check_node('SelectStmt', 0).multi(
+                check_field('where_clause'),
+                check_field('limit_clause')
+            )
 
     Note:
         This function could be thought as an AND statement, since all tests it runs must pass
 
     """
 
-    for arg in args:
+    for arg in tests:
         # when input is a single test, make iterable
         if callable(arg): arg = [arg]
 
         for test in arg:
             # assume test is function needing a state argument
             # partial state so reporter can test
-            closure = partial(test, state)
-            state.do_test(closure)
+            test(state)
 
     # return original state, so can be chained
     return state
 
-def test_not(state, *args, msg):
+def check_not(state, *tests, msg):
     """Run multiple subtests that should fail. If all subtests fail, returns original state (for chaining)
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
         args: one or more sub-SCTs to run.
-    :Example:
-        Thh SCT below runs two test_student_typed cases.. ::
 
-            Ex().multi(test_student_typed('INNER'), test_student_typed('OUTER'))
+    :Example:
+
+        Thh SCT below runs two has_code cases.. ::
+
+            Ex().check_not(
+                has_code('INNER'),
+                has_code('OUTER'),
+                msg="Don't use `INNER` or `OUTER`!"
+            )
 
         If students use INNER (JOIN) or OUTER (JOIN) in their code, this test will fail.
 
     Note:
-        - This function is currently only tested in working with test_student_typed in the subtests.
+        - This function is currently only tested in working with has_code in the subtests.
         - This function can be thought as a NOT(x OR y OR ...) statement, since all tests it runs must fail
         - This function can be considered a direct counterpart of multi.
 
     """
 
-    for arg in args:
+    for arg in tests:
         # when input is a single test, make iterable
         if callable(arg): arg = [arg]
-
+            
         for test in arg:
-            # assume test is function needing a state argument
-            # partial state so reporter can test
-            closure = partial(test, state)
             try:
-                state.do_test(closure)
+                test(state)
             except TestFail:
-                # it fails, as expected, so straighten reporter
-                state.reporter.failed_test = False
+                # it fails, as expected, off to next one
                 continue
-            return state.do_test(msg)
+            return state.reporter.do_test(msg)
 
     # return original state, so can be chained
     return state
 
-def extend(state, *args):
-    for arg in args:
-        # when input is a single test, make iterable
-        if callable(arg): arg = [arg]
-
-        for test in arg:
-            # update state to be output of current test
-            state = test(state)
-
-    # return original state, so can be chained
-    return state
-
-def test_or(state, *tests):
+def check_or(state, *tests):
     """Test whether at least one SCT passes.
     
     Args:
@@ -106,49 +96,52 @@ def test_or(state, *tests):
     :Example:
         The SCT below tests that the student typed either 'SELECT' or 'WHERE' (or both).. ::
 
-            Ex().test_or(test_student_typed('SELECT'),
-                         test_student_typed('WHERE'))
+            Ex().check_or(
+                has_code('SELECT'),
+                has_code('WHERE')
+            )
 
-        The SCT below checks that a SELECT statement has at least a WHERE or LIMIT clause.. ::
+        The SCT below checks that a SELECT statement has at least a WHERE c or LIMIT clause.. ::
 
-            Ex().check_node('SelectStmt', 0) \\
-                .test_or(check_field('where_clause'), check_field('limit_clause'))
+            Ex().check_node('SelectStmt', 0).check_or(
+                check_field('where_clause'),
+                check_field('limit_clause')
+            )
     """
-
-    rep = state.reporter
 
     success = False
     first_feedback = None
-    for test in tests: 
-        try: 
-            multi(state, test)
-            success = True
-        except TestFail as e:
-            if not first_feedback: first_feedback = rep.feedback
-            rep.failed_test = False
 
-        if success: 
-            return
+    for arg in tests:
+        # when input is a single test, make iterable
+        if callable(arg): arg = [arg]
+
+        for test in arg:
+            try:
+                test(state)
+                success = True
+            except TestFail as e:
+                if not first_feedback: first_feedback = e.feedback
+            if success:
+                return
     
-    rep.failed_test = True
-    rep.feedback = first_feedback
-    raise TestFail
+    state.reporter.do_test(first_feedback.message, first_feedback.astobj)
 
-def test_correct(state, check, diagnose):
+def check_correct(state, check, diagnose):
     """Allows feedback from a diagnostic SCT, only if a check SCT fails. 
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
-        check: An sct (or list of SCTs) that must succeed.
-        diagnose: An sct (or list of SCTs) to run if the check fails.
+        check: An sct chain that must succeed.
+        diagnose: An sct chain to run if the check fails.
 
     :Example:
         The SCT below tests whether students query result is correct, before running diagnostic SCTs.. ::
 
-            Ex().test_correct(check_result(), [
-                    test_error("some message about an error"),
-                    check_node('SelectStmt', missing_msg = "Did you forget your Select statement?")
-                    ])
+            Ex().check_correct(
+                check_result(),
+                check_node('SelectStmt')
+            )
 
     """
 
@@ -156,4 +149,4 @@ def test_correct(state, check, diagnose):
         # use multi twice, since diagnose and check may be lists of tests
         multi(state, diagnose, check)
 
-    test_or(state, diagnose_and_check, check)
+    check_or(state, diagnose_and_check, check)

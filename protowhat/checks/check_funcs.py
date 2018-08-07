@@ -125,7 +125,7 @@ def check_field(state, name, index=None, missing_msg="Could not find the {index}
 
 import re
 
-def test_student_typed(state, text, msg="Submission does not contain the code `{}`.", fixed=False):
+def has_code(state, text, msg="Check the {ast_path}. The checker expected to find {text}.", fixed=False):
     """Test whether the student code contains text.
 
     Args:
@@ -136,7 +136,7 @@ def test_student_typed(state, text, msg="Submission does not contain the code `{
 
     Note:
         Functions like ``check_node`` focus on certain parts of code.
-        Using these functions followed by ``test_student_typed`` will only look
+        Using these functions followed by ``has_code`` will only look
         in the code being focused on.
 
     :Example:
@@ -147,22 +147,22 @@ def test_student_typed(state, text, msg="Submission does not contain the code `{
         Then the first test below would (unfortunately) pass, but the second would fail..::
 
             # contained in student code
-            Ex().test_student_typed(text="id < 10")
+            Ex().has_code(text="id < 10")
 
             # the $ means that you are matching the end of a line
-            Ex().test_student_typed(text="id < 10$")
+            Ex().has_code(text="id < 10$")
 
         By setting ``fixed = True``, you can search for fixed strings::
 
             # without fixed = True, '*' matches any character
-            Ex().test_student_typed(text="SELECT * FROM b")               # passes
-            Ex().test_student_typed(text="SELECT \\\\* FROM b")             # fails
-            Ex().test_student_typed(text="SELECT * FROM b", fixed=True)   # fails
+            Ex().has_code(text="SELECT * FROM b")               # passes
+            Ex().has_code(text="SELECT \\\\* FROM b")             # fails
+            Ex().has_code(text="SELECT * FROM b", fixed=True)   # fails
 
         You can check only the code corresponding to the WHERE clause, using ::
 
             where = Ex().check_node('SelectStmt', 0).check_field('where_clause')
-            where.test_student_typed(text = "id < 10)
+            where.has_code(text = "id < 10)
 
     """
     stu_ast = state.student_ast
@@ -172,7 +172,7 @@ def test_student_typed(state, text, msg="Submission does not contain the code `{
     ParseError = state.ast_dispatcher.ParseError
     stu_text = stu_ast._get_text(stu_code) if not isinstance(stu_ast, ParseError) else stu_code
 
-    _msg = msg.format(text)
+    _msg = msg.format(ast_path = state.get_ast_path(), text = text)
 
     # either simple text matching or regex test
     res = text in stu_text if fixed else re.search(text, stu_text)
@@ -185,7 +185,7 @@ def test_student_typed(state, text, msg="Submission does not contain the code `{
 
 @requires_ast
 def has_equal_ast(state, 
-                  msg="Check the {ast_path}. Your code does not seem to match the solution.",
+                  msg="Check the {ast_path}.{extra}",
                   sql=None,
                   start="sql_script",
                   exact=True):
@@ -221,13 +221,23 @@ def has_equal_ast(state,
     stu_rep = repr(state.student_ast)
     sol_rep = repr(sol_ast)
 
-    _msg = msg.format(ast_path = state.get_ast_path())
+    def get_str(ast, code, sql):
+        if sql: return sql
+        if isinstance(ast, str): return ast
+        try:
+            return ast._get_text(code)
+        except:
+            return None
+
+    sol_str = get_str(state.solution_ast, state.solution_code, sql)
+    _msg = msg.format(ast_path = state.get_ast_path(),
+                      extra = " The checker expected to find `{}` in there.".format(sol_str) if sol_str else "")
     if       exact and (sol_rep != stu_rep):     state.do_test(_msg or MSG_CHECK_FALLBACK)
     elif not exact and (sol_rep not in stu_rep): state.do_test(_msg or MSG_CHECK_FALLBACK)
 
     return state
 
-def verify_ast_parses(state):
+def has_parsed_ast(state):
     asts = [state.student_ast, state.solution_ast]
     if any(isinstance(c, state.ast_dispatcher.ParseError) for c in asts):
         state.do_test("AST did not parse")

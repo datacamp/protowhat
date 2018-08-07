@@ -111,15 +111,15 @@ class ExGen:
             ::
                 
                 # How to write SCT on DataCamp.com
-                Ex().test_student_typed(text="SELECT id")
+                Ex().has_code(text="SELECT id")
 
                 # Experiment locally - chain off of Ex(), created from state
                 state = SomeStateProducingFunction()
-                Ex(state).test_student_typed(text="SELECT id")
+                Ex(state).has_code(text="SELECT id")
 
                 # Experiment locally - no Ex(), create and pass state explicitly
                 state = SomeStateProducingFunction()
-                test_student_typed(state, text="SELECT id")
+                has_code(state, text="SELECT id")
 
         """
         if state is None and self.root_state is None:
@@ -134,7 +134,6 @@ def create_sct_context(State, sct_dict, root_state = None):
     sct_ctx = {k: state_dec(v) for k, v in sct_dict.items()}
 
     ctx = {**sct_ctx}
-    ctx['state_dec'] = state_dec
     ctx['Ex'] = ExGen(root_state, sct_ctx)
     ctx['F'] = partial(F, attr_scts = sct_ctx)
 

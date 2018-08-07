@@ -1,7 +1,6 @@
 import bashlex
 import bashlex.errors
 from protowhat import utils_ast
-
 from collections import OrderedDict
 
 def dump_bash(obj, parent_cls = bashlex.ast.node, v = False):
