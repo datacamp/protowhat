@@ -1,4 +1,4 @@
-def test_mc(state, correct, msgs):
+def has_chosen(state, correct, msgs):
     """
     Note uses 1-based indexing in order to work with Datacamp's campus app.
 
@@ -11,7 +11,7 @@ def test_mc(state, correct, msgs):
         The following SCT is for a multiple choice exercise with 2 options, the first
         of which is correct.::
 
-            Ex().test_mc(1, ['Correct!', 'Incorrect. Try again!'])
+            Ex().has_chosen(1, ['Correct!', 'Incorrect. Try again!'])
     """
 
     ctxt = {}

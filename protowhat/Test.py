@@ -1,16 +1,20 @@
-import re
-import _ast
-
 class Feedback(object):
 
-   def __init__(self, message, astobj = None, strict=False):
+    def __init__(self, message, astobj = None):
         self.message = message
-        self.line_info = {}
+        self.astobj = astobj
+        
+    def get_line_info(self):
         try:
-            if astobj is not None:
-                self.line_info = astobj._get_pos()
-        except Exception as e:
-            if strict: raise e
+            if self.astobj is not None:
+                return(self.astobj._get_pos())
+            else:
+                return({})
+        except:
+            return({})
 
 class TestFail(Exception):
-    pass
+    def __init__(self, feedback, payload):
+        super().__init__(feedback.message)
+        self.feedback = feedback
+        self.payload = payload

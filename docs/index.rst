@@ -44,7 +44,7 @@ is first parsed into a complex-looking parse tree, and then restructured into an
    :align: center
 
 Notice how the statement is neatly chopped up into its consituents: the ``SELECT`` statement is chopped up into three parts:
-the ``target_list`` (which columsnt o select), the ``from_clause`` (from which table to select) and the ``where_clause`` (the condition that has to be satisfied).
+the ``target_list`` (which columns to select), the ``from_clause`` (from which table to select) and the ``where_clause`` (the condition that has to be satisfied).
 Next, the ``where_caluse`` is a ``BinaryExpr`` that is further chopped up.
 
 Chaining

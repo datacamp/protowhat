@@ -74,8 +74,7 @@ def test_check_no_sol(state, tf):
 
 def test_check_dir(state):
     with TemporaryDirectory() as td:
-        child = cf.test_dir(state, td)
-
+        cf.has_dir(state, td)
 
 @pytest.fixture(scope="function")
 def code_state():

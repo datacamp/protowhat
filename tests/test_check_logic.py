@@ -17,13 +17,10 @@ def state():
         student_conn = None, solution_conn = None)
 
 def fails(state, msg=""): 
-    state.reporter.failed_test = True
-    state.reporter.feedback.msg = msg
-    raise TF
+    cl.fail(state, msg)
 
-def passes(state): return state
-
-def childx(state): return state.to_child(student_code = state.student_code + 'x')
+def passes(state):
+    return state
 
 @pytest.mark.parametrize('arg1', ( passes, [passes, passes] ))
 @pytest.mark.parametrize('arg2', ( passes, [passes, passes] ))
@@ -38,59 +35,40 @@ def test_test_multi_fail_arg1(state, arg1):
 def test_test_multi_fail_arg2(state, arg2):
     with pytest.raises(TF): cl.multi(state, passes, arg2)
 
-@pytest.mark.parametrize('sct,stu_code,is_star_args', [
-    (childx, 'x', False),
-    ([childx, childx], 'xx', False),
-    ([childx, childx], 'xx', True),
-    ([[childx, childx], childx], 'xxx', True)
-    ])
-def test_extend(state, sct, stu_code, is_star_args):
-    child = cl.extend(state, sct) if not is_star_args else cl.extend(state, *sct)
-    assert child.student_code == stu_code
+def test_check_or_pass(state):
+    cl.check_or(state, passes, fails)
 
-def test_extend_fail(state):
-    with pytest.raises(TF): cl.extend(state, childx, lambda state: cl.fail(state))
-
-def test_test_or_pass(state):
-    cl.test_or(state, passes, fails)
-
-def test_test_or_fail(state):
-    with pytest.raises(TF): cl.test_or(state, fails, fails)
-
-def test_test_not_pass(state):
-    cl.test_not(state, fails, msg='fail')
-    assert not state.reporter.failed_test
-
-def test_test_not_pass_2(state):
-    cl.test_not(state, [fails, fails], msg='fail')
-    assert not state.reporter.failed_test
-
-def test_test_not_fail(state):
-    with pytest.raises(TF):
-        cl.test_not(state, passes, msg='fail')
-        assert state.reporter.feedback.message == 'fail'
-
-def test_test_not_fail_2(state):
-    with pytest.raises(TF):
-        cl.test_not(state, [passes, fails], msg='fail')
-        assert state.reporter.feedback.message == 'fail'
-
-def test_test_not_fail_3(state):
-    with pytest.raises(TF):
-        cl.test_not(state, [fails, passes], msg='fail')
-        assert state.reporter.feedback.message == 'fail'
-
-def test_test_correct_pass(state):
-    cl.test_correct(state, passes, fails)
-
-def test_test_correct_fail_msg(state):
+def test_check_or_fail(state):
     f1, f2 = partial(fails, msg="f1"), partial(fails, msg="f2")
-    with pytest.raises(TF): 
-        cl.test_correct(state, f1, f2)
-        assert state.reporter.feedback.message == "f2"
+    with pytest.raises(TF, match='f1'):
+        cl.check_or(state, f1, f2)
 
-def test_test_correct_fail_multi_msg(state):
+@pytest.mark.parametrize('arg1', [
+    fails,
+    [fails, fails]
+])
+def test_check_not_pass(state, arg1):
+    cl.check_not(state, arg1, msg='fail')
+
+@pytest.mark.parametrize('arg1', [
+    passes,
+    [passes, fails],
+    [fails, passes]
+])
+def test_check_not_fail(state, arg1):
+    with pytest.raises(TF, match='boom'):
+        cl.check_not(state, arg1, msg='boom')
+
+def test_check_correct_pass(state):
+    cl.check_correct(state, passes, fails)
+
+def test_check_correct_fail_msg(state):
+    f1, f2 = partial(fails, msg="f1"), partial(fails, msg="f2")
+    with pytest.raises(TF, match='f2'): 
+        cl.check_correct(state, f1, f2)
+
+@pytest.mark.debug
+def test_check_correct_fail_multi_msg(state):
     f1, f2, f3 = [partial(fails, msg="f%s"%ii) for ii in range(1, 4)]
-    with pytest.raises(TF): 
-        cl.test_correct(state, [f1, f3], [f2, f3])
-        assert state.reporter.feedback.message == "f2"
+    with pytest.raises(TF, match='f2'): 
+        cl.check_correct(state, [f1, f3], [f2, f3])

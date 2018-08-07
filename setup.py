@@ -19,7 +19,7 @@ setup(
 	name=PACKAGE_NAME,
 	version=VERSION,
 	packages=['protowhat', 'protowhat.checks'],
-	install_requires=['markdown2'],
+	install_requires=['markdown2', 'jinja2'],
         description = 'Prototype package for submission correctness testing',
         long_description=README,
         long_description_content_type='text/markdown',

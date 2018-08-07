@@ -1,5 +1,6 @@
 from copy import copy
 import inspect
+from jinja2 import Template
 
 class DummyParser:
     def __init__(self):
@@ -21,6 +22,7 @@ class State:
                  student_ast = None,
                  fname = None,
                  ast_dispatcher = None,
+                 messages = [],
                  history = tuple()):
 
         for k,v in locals().items():
@@ -28,7 +30,9 @@ class State:
 
         if ast_dispatcher is None:
             self.ast_dispatcher = self.get_dispatcher()
-
+        
+        self.messages = messages
+        
         # Parse solution and student code
         # solution code raises an exception if can't be parsed
         if self.ast_dispatcher:
@@ -69,7 +73,7 @@ class State:
 
         return self.reporter.do_test(*args, highlight=highlight, **kwargs)
 
-    def to_child(self, **kwargs):
+    def to_child(self, append_message="", **kwargs):
         """Basic implementation of returning a child state"""
 
         bad_pars = set(kwargs) - set(self._child_params)
@@ -79,4 +83,23 @@ class State:
         child = copy(self)
         for k, v in kwargs.items(): setattr(child, k, v)
         child.parent = self
+
+        # append messages
+        child.messages = [*self.messages, append_message]
+
         return child
+
+    def build_message(self, tail_msg="", fmt_kwargs=None):
+
+        if not fmt_kwargs: fmt_kwargs = {}
+        out_list = []
+        # add trailing message to msg list
+        msgs = self.messages[:] + [{'msg': tail_msg, 'kwargs':fmt_kwargs}]
+
+        for d in msgs:
+            # don't bother appending if there is no message
+            if not d or not d['msg']: continue
+            out = Template(d['msg']).render(**d['kwargs'])
+            out_list.append(out)
+
+        return "".join(out_list)

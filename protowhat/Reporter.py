@@ -14,38 +14,26 @@ class Reporter(object):
     """
     active_reporter = None
 
-    def __init__(self, output = []):
-        self.failed_test = False
-        self.feedback = Feedback("Oh no, your solution is incorrect! Please, try again.")
+    def __init__(self, errors=None):
         self.success_msg = "Great work!"
+        self.errors = errors
         self.errors_allowed = False
-        self.output = output
 
-        self.raise_ast_pos_errors = False
+    def get_errors(self):
+        return self.errors
 
-    def set_tag(self, *args, **kwargs): pass
+    def allow_errors(self):
+        self.errors_allowed = True
 
-    def do_test(self, testobj, highlight=None):
-        """Do test.
+    def do_test(self, feedback_msg, highlight=None):
+        """Raise failing test.
 
-        Execute a given test, unless some previous test has failed. If the test has failed,
-        the state of the reporter changes and the feedback is kept.
+        Raise a ``TestFail`` object, containing the feedback message and highlight information.
         """
 
-        if isinstance(testobj, str):
-            self.failed_test = True
-            self.feedback = Feedback(testobj)
-            if highlight:
-                self.feedback = Feedback(self.feedback.message, highlight)
-
-            raise TestFail(self.feedback)
-        else: 
-            testobj()    # run function for side effects
-
-    def get_error(self):
-        # each entry of output should be a dict of form, type: 'error', payload: 'somepayload'
-        return self.output[-1].get('payload') if self.output else None  # get last error
-
+        feedback = Feedback(feedback_msg, highlight)
+        raise TestFail(feedback, self.build_failed_payload(feedback))
+    
     @staticmethod
     def formatted_line_info(line_info):
         cpy = {**line_info}
@@ -53,29 +41,25 @@ class Reporter(object):
             if k in cpy: cpy[k] += 1
         return cpy
 
+    def build_failed_payload(self, feedback):
+        return {
+            "correct": False,
+            "message": Reporter.to_html(feedback.message),
+            **self.formatted_line_info(feedback.get_line_info())
+        }
 
-    def build_payload(self, error=None):
-        error = self.get_error() if not error else error
-
-        if (error is not None and not self.failed_test and not self.errors_allowed):
-            feedback_msg = "Your code contains an error: `%s`" % str(error)
+    def build_final_payload(self):
+        if self.errors and not self.errors_allowed:
+            feedback_msg = "Your code generated an error. Fix it and try again!"
             return {
                 "correct": False,
                 "message": Reporter.to_html(feedback_msg)
-                }
-
-        if self.failed_test:
-            return {
-                "correct": False,
-                "message": Reporter.to_html(self.feedback.message),
-                **self.formatted_line_info(self.feedback.line_info)
-                }
-            
+            }
         else:
             return {
                 "correct": True,
                 "message": Reporter.to_html(self.success_msg)
-                }
+            }
 
     @staticmethod
     def to_html(msg):
