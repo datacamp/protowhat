@@ -1,8 +1,7 @@
-Simple tests
-------------
+Ex()
+----
 
-.. automodule:: protowhat.checks.check_simple
-    :members:
+.. automethod:: protowhat.sct_syntax.Ex.__call__
 
 AST Checks
 ----------
@@ -16,7 +15,8 @@ Logic
 .. automodule:: protowhat.checks.check_logic
     :members:
 
-Ex()
-----
+Simple tests
+------------
 
-.. automethod:: protowhat.sct_syntax.Ex.__call__
+.. automodule:: protowhat.checks.check_simple
+    :members:
