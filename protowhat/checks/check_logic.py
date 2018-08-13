@@ -81,7 +81,7 @@ def check_not(state, *tests, msg):
             except TestFail:
                 # it fails, as expected, off to next one
                 continue
-            return state.reporter.do_test(msg)
+            return state.do_test(msg)
 
     # return original state, so can be chained
     return state
@@ -125,7 +125,7 @@ def check_or(state, *tests):
             if success:
                 return
     
-    state.reporter.do_test(first_feedback.message, first_feedback.astobj)
+    state.do_test(first_feedback.message, highlight=first_feedback.astobj)
 
 def check_correct(state, check, diagnose):
     """Allows feedback from a diagnostic SCT, only if a check SCT fails. 

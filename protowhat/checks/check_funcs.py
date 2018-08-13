@@ -18,13 +18,13 @@ def requires_ast(f):
 
         parse_fail = any(isinstance(ast, ParseError) for ast in state_ast)
 
-        if parse_fail: return state              # skip test
-        else: return f(*args, **kwargs)          # proceed with test
+        if parse_fail: return state     # skip test
+        else: return f(*args, **kwargs) # proceed with test
 
     return wrapper
 
 @requires_ast
-def check_node(state, name, index=0, missing_msg="Could not find the {index}{node_name}.", priority=None):
+def check_node(state, name, index=0, missing_msg="Check the {ast_path}. Could not find the {index}{node_name}.", priority=None):
     """Select a node from abstract syntax tree (AST), using its name and index position.
     
     Args:
@@ -63,8 +63,9 @@ def check_node(state, name, index=0, missing_msg="Could not find the {index}{nod
     try: stu_stmt = stu_stmt_list[index]
     except IndexError: 
         # use speaker on ast dialect module to get message, or fall back to generic
-        _msg = state.ast_dispatcher.describe(sol_stmt, missing_msg, index = index)
-        state.do_test(_msg or MSG_CHECK_FALLBACK)
+        ast_path = state.get_ast_path() or "highlighted code"
+        _msg = state.ast_dispatcher.describe(sol_stmt, missing_msg, index=index, ast_path=ast_path)
+        state.do_test(_msg)
 
     action = {'type': 'check_node', 'kwargs': {'name': name, 'index': index}, 'node': stu_stmt}
     
@@ -73,7 +74,7 @@ def check_node(state, name, index=0, missing_msg="Could not find the {index}{nod
 
 
 @requires_ast
-def check_field(state, name, index=None, missing_msg="Could not find the {index}{field_name} of the {node_name}."):
+def check_field(state, name, index=None, missing_msg="Check the {ast_path}. Could not find the {index}{field_name}."):
     """Select an attribute from an abstract syntax tree (AST) node, using the attribute name.
     
     Args:
@@ -105,17 +106,18 @@ def check_field(state, name, index=None, missing_msg="Could not find the {index}
     except IndexError: 
         raise IndexError("Can't get %s attribute"%name)
 
+    # use speaker on ast dialect module to get message, or fall back to generic
+    ast_path = state.get_ast_path() or "highlighted code"
+    _msg = state.ast_dispatcher.describe(state.student_ast, missing_msg, field=name, index=index, ast_path=ast_path)
+
     try: 
         stu_attr = getattr(state.student_ast, name)
         if index is not None: stu_attr = stu_attr[index]
-    except: 
-        # use speaker on ast dialect module to get message, or fall back to generic
-        _msg = state.ast_dispatcher.describe(state.student_ast, missing_msg, field = name, index = index)
-        state.do_test(_msg or MSG_CHECK_FALLBACK)
+    except:
+        state.do_test(_msg)
 
     # fail if attribute exists, but is none only for student
     if stu_attr is None and sol_attr is not None:
-        _msg = state.ast_dispatcher.describe(state.student_ast, missing_msg, field = name, index = index)
         state.do_test(_msg)
 
     action = {'type': 'check_field', 'kwargs': {'name': name, 'index': index}}
@@ -172,7 +174,7 @@ def has_code(state, text, msg="Check the {ast_path}. The checker expected to fin
     ParseError = state.ast_dispatcher.ParseError
     stu_text = stu_ast._get_text(stu_code) if not isinstance(stu_ast, ParseError) else stu_code
 
-    _msg = msg.format(ast_path = state.get_ast_path(), text = text)
+    _msg = msg.format(ast_path = state.get_ast_path() or "highlighted code", text = text)
 
     # either simple text matching or regex test
     res = text in stu_text if fixed else re.search(text, stu_text)
@@ -185,38 +187,50 @@ def has_code(state, text, msg="Check the {ast_path}. The checker expected to fin
 
 @requires_ast
 def has_equal_ast(state, 
-                  msg="Check the {ast_path}.{extra}",
+                  msg="Check the {ast_path}. {extra}",
                   sql=None,
-                  start="sql_script",
-                  exact=True):
+                  start= ['expression', 'subquery', 'sql_script'][0],
+                  exact=None):
     """Test whether the student and solution code have identical AST representations
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
         msg  : feedback message if student and solution ASTs don't match
-        sql  : optional code to use in place of the solution ast
-        start: if sql arg is used, the parser rule to parse the sql code
+        sql  : optional code to use instead of the solution ast that is zoomed in on.
+        start: if ``sql`` arg is used, the parser rule to parse the sql code.
+               One of 'expression' (the default), 'subquery', or 'sql_script'.
         exact: whether to require an exact match (True), or only that the 
-               student AST contains the solution AST.
+               student AST contains the solution AST. If not specified, this
+               defaults to ``True`` if ``sql`` is not specified, and to ``False``
+               if ``sql`` is specified. You can always specify it manually.
 
     :Example:
-        Suppose the student and solution code is `SeLeCt 1` and `SELECT 1`, respectively.
-        In this case, the SCT `Ex().has_equal_ast()` will pass, since both
-        select statements return identical ASTs.
 
-        If the solution code is..::
+        Example 1 - Suppose the solution code is ::
+
+            SELECT * FROM cities
+
+        and you want to verify whether the `FROM` part is correct: ::
+
+            Ex().check_node('SelectStmt').from_clause().has_equal_ast()
+
+        Example 2 - Suppose the solution code is ::
 
             SELECT * FROM b WHERE id > 1 AND name = 'filip'
 
         Then the following SCT makes sure ``id > 1`` was used somewhere in the WHERE clause.::
 
-            Ex().check_node('SelectStmt') \\
+            Ex().check_node('SelectStmt') \\/
                 .check_field('where_clause') \\/
-                .has_equal_ast(sql = 'id > 1', start='expression', exact=False)
+                .has_equal_ast(sql = 'id > 1')
         
     """
     ast = state.ast_dispatcher.ast
     sol_ast = state.solution_ast if sql is None else ast.parse(sql, start)
+
+    # if sql is set, exact defaults to False.
+    # if sql not set, exact defaults to True.
+    if exact is None: exact = sql is None
 
     stu_rep = repr(state.student_ast)
     sol_rep = repr(sol_ast)
@@ -230,10 +244,10 @@ def has_equal_ast(state,
             return None
 
     sol_str = get_str(state.solution_ast, state.solution_code, sql)
-    _msg = msg.format(ast_path = state.get_ast_path(),
-                      extra = " The checker expected to find `{}` in there.".format(sol_str) if sol_str else "")
-    if       exact and (sol_rep != stu_rep):     state.do_test(_msg or MSG_CHECK_FALLBACK)
-    elif not exact and (sol_rep not in stu_rep): state.do_test(_msg or MSG_CHECK_FALLBACK)
+    _msg = msg.format(ast_path = state.get_ast_path() or "highlighted code",
+                      extra = "The checker expected to find `{}` in there.".format(sol_str) if sol_str else "Something is missing.")
+    if       exact and (sol_rep != stu_rep):     state.do_test(_msg)
+    elif not exact and (sol_rep not in stu_rep): state.do_test(_msg)
 
     return state
 

@@ -64,8 +64,6 @@ class Dispatcher:
         return selector.out[index]
 
     def parse(self, code):
-        # AST modules should define exception as ParseError, but use AntlrException
-        # for backwards compatibility
         try:
             return self.ast.parse(code, strict=True)
         except self.ParseError as e:
@@ -75,8 +73,7 @@ class Dispatcher:
     def describe(self, node, msg, field = "", **kwargs):
         speaker = getattr(self.ast, 'speaker', None)
 
-        has_index = kwargs.get('index') is not None
-        if has_index: 
+        if kwargs.get('index') is not None:
             phrase = "{} entry in the " if field else "{} "
             kwargs['index'] = phrase.format(get_ord(kwargs['index'] + 1))
         else: 
