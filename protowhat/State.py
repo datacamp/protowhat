@@ -22,7 +22,6 @@ class State:
                  student_ast = None,
                  fname = None,
                  ast_dispatcher = None,
-                 messages = [],
                  history = tuple()):
 
         for k,v in locals().items():
@@ -31,7 +30,7 @@ class State:
         if ast_dispatcher is None:
             self.ast_dispatcher = self.get_dispatcher()
         
-        self.messages = messages
+        self.messages = []
         
         # Parse solution and student code
         # solution code raises an exception if can't be parsed
@@ -48,7 +47,6 @@ class State:
         
     def get_ast_path(self):
         rev_checks = filter(lambda x: x['type'] in ['check_field', 'check_node'], reversed(self.history))
-
         try:
             last = next(rev_checks)
             if last['type'] == 'check_node':
@@ -64,6 +62,7 @@ class State:
                                                         field = last['kwargs']['name'],
                                                         index = last['kwargs']['index'],
                                                         msg = "{index}{field_name} of the {node_name}")
+
         except StopIteration:
             return self.ast_dispatcher.describe(self.student_ast, "{node_name}")
 
