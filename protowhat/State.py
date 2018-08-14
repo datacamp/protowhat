@@ -46,7 +46,7 @@ class State:
         return DummyParser()
         
     def get_ast_path(self):
-        rev_checks = filter(lambda x: x['type'] in ['check_field', 'check_node'], reversed(self.history))
+        rev_checks = filter(lambda x: x['type'] in ['check_edge', 'check_node'], reversed(self.history))
         try:
             last = next(rev_checks)
             if last['type'] == 'check_node':

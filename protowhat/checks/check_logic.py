@@ -2,9 +2,9 @@ from protowhat.Test import TestFail
 from types import GeneratorType
 from functools import partial
 
-def fail(state, msg="fail"):
+def fail(state, incorrect_msg="fail"):
     """Always fails the SCT, with an optional msg."""
-    state.do_test(msg)
+    state.do_test(incorrect_msg)
 
     return state
 
@@ -24,8 +24,8 @@ def multi(state, *tests):
         The SCT below checks that a SELECT statement has both a WHERE and LIMIT clause.. ::
 
             Ex().check_node('SelectStmt', 0).multi(
-                check_field('where_clause'),
-                check_field('limit_clause')
+                check_edge('where_clause'),
+                check_edge('limit_clause')
             )
 
     Note:
@@ -45,12 +45,13 @@ def multi(state, *tests):
     # return original state, so can be chained
     return state
 
-def check_not(state, *tests, msg):
+def check_not(state, *tests, incorrect_msg):
     """Run multiple subtests that should fail. If all subtests fail, returns original state (for chaining)
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
-        args: one or more sub-SCTs to run.
+        *tests: one or more sub-SCTs to run.
+        incorrect_msg: feedback message that is shown in case not all tests specified in ``*tests`` fail.
 
     :Example:
 
@@ -59,7 +60,7 @@ def check_not(state, *tests, msg):
             Ex().check_not(
                 has_code('INNER'),
                 has_code('OUTER'),
-                msg="Don't use `INNER` or `OUTER`!"
+                incorrect_msg="Don't use `INNER` or `OUTER`!"
             )
 
         If students use INNER (JOIN) or OUTER (JOIN) in their code, this test will fail.
@@ -81,7 +82,7 @@ def check_not(state, *tests, msg):
             except TestFail:
                 # it fails, as expected, off to next one
                 continue
-            return state.do_test(msg)
+            return state.do_test(incorrect_msg)
 
     # return original state, so can be chained
     return state
@@ -104,8 +105,8 @@ def check_or(state, *tests):
         The SCT below checks that a SELECT statement has at least a WHERE c or LIMIT clause.. ::
 
             Ex().check_node('SelectStmt', 0).check_or(
-                check_field('where_clause'),
-                check_field('limit_clause')
+                check_edge('where_clause'),
+                check_edge('limit_clause')
             )
     """
 

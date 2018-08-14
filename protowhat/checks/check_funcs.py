@@ -74,7 +74,7 @@ def check_node(state, name, index=0, missing_msg="Check the {ast_path}. Could no
 
 
 @requires_ast
-def check_field(state, name, index=None, missing_msg="Check the {ast_path}. Could not find the {index}{field_name}."):
+def check_edge(state, name, index=None, missing_msg="Check the {ast_path}. Could not find the {index}{field_name}."):
     """Select an attribute from an abstract syntax tree (AST) node, using the attribute name.
     
     Args:
@@ -93,12 +93,12 @@ def check_field(state, name, index=None, missing_msg="Check the {ast_path}. Coul
             # approach 1: with manually created State instance -----
             state = State(*args, **kwargs)
             select = check_node(state, 'SelectStmt', 0)
-            clause = check_field(select, 'from_clause')
+            clause = check_edge(select, 'from_clause')
 
             # approach 2: with Ex and chaining ---------------------
             select = Ex().check_node('SelectStmt', 0)     # get first select statement
-            clause =  select.check_field('from_clause')    # get from_clause (a list)
-            clause2 = select.check_field('from_clause', 0) # get first entry in from_clause
+            clause =  select.check_edge('from_clause')    # get from_clause (a list)
+            clause2 = select.check_edge('from_clause', 0) # get first entry in from_clause
     """
     try: 
         sol_attr = getattr(state.solution_ast, name)
@@ -120,20 +120,20 @@ def check_field(state, name, index=None, missing_msg="Check the {ast_path}. Coul
     if stu_attr is None and sol_attr is not None:
         state.do_test(_msg)
 
-    action = {'type': 'check_field', 'kwargs': {'name': name, 'index': index}}
+    action = {'type': 'check_edge', 'kwargs': {'name': name, 'index': index}}
 
     return state.to_child(student_ast = stu_attr, solution_ast = sol_attr,
                           history = state.history + (action,)) 
 
 import re
 
-def has_code(state, text, msg="Check the {ast_path}. The checker expected to find {text}.", fixed=False):
+def has_code(state, text, incorrect_msg="Check the {ast_path}. The checker expected to find {text}.", fixed=False):
     """Test whether the student code contains text.
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
         text : text that student code must contain.
-        msg  : feedback message if text is not in student code.
+        incorrect_msg: feedback message if text is not in student code.
         fixed: whether to match text exactly, rather than using regular expressions.
 
     Note:
@@ -163,7 +163,7 @@ def has_code(state, text, msg="Check the {ast_path}. The checker expected to fin
 
         You can check only the code corresponding to the WHERE clause, using ::
 
-            where = Ex().check_node('SelectStmt', 0).check_field('where_clause')
+            where = Ex().check_node('SelectStmt', 0).check_edge('where_clause')
             where.has_code(text = "id < 10)
 
     """
@@ -174,7 +174,7 @@ def has_code(state, text, msg="Check the {ast_path}. The checker expected to fin
     ParseError = state.ast_dispatcher.ParseError
     stu_text = stu_ast._get_text(stu_code) if not isinstance(stu_ast, ParseError) else stu_code
 
-    _msg = msg.format(ast_path = state.get_ast_path() or "highlighted code", text = text)
+    _msg = incorrect_msg.format(ast_path = state.get_ast_path() or "highlighted code", text = text)
 
     # either simple text matching or regex test
     res = text in stu_text if fixed else re.search(text, stu_text)
@@ -187,7 +187,7 @@ def has_code(state, text, msg="Check the {ast_path}. The checker expected to fin
 
 @requires_ast
 def has_equal_ast(state, 
-                  msg="Check the {ast_path}. {extra}",
+                  incorrect_msg="Check the {ast_path}. {extra}",
                   sql=None,
                   start= ['expression', 'subquery', 'sql_script'][0],
                   exact=None):
@@ -195,7 +195,7 @@ def has_equal_ast(state,
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
-        msg  : feedback message if student and solution ASTs don't match
+        incorrect_msg: feedback message if student and solution ASTs don't match
         sql  : optional code to use instead of the solution ast that is zoomed in on.
         start: if ``sql`` arg is used, the parser rule to parse the sql code.
                One of 'expression' (the default), 'subquery', or 'sql_script'.
@@ -221,7 +221,7 @@ def has_equal_ast(state,
         Then the following SCT makes sure ``id > 1`` was used somewhere in the WHERE clause.::
 
             Ex().check_node('SelectStmt') \\/
-                .check_field('where_clause') \\/
+                .check_edge('where_clause') \\/
                 .has_equal_ast(sql = 'id > 1')
         
     """
@@ -244,8 +244,8 @@ def has_equal_ast(state,
             return None
 
     sol_str = get_str(state.solution_ast, state.solution_code, sql)
-    _msg = msg.format(ast_path = state.get_ast_path() or "highlighted code",
-                      extra = "The checker expected to find `{}` in there.".format(sol_str) if sol_str else "Something is missing.")
+    _msg = incorrect_msg.format(ast_path = state.get_ast_path() or "highlighted code",
+                                extra = "The checker expected to find `{}` in there.".format(sol_str) if sol_str else "Something is missing.")
     if       exact and (sol_rep != stu_rep):     state.do_test(_msg)
     elif not exact and (sol_rep not in stu_rep): state.do_test(_msg)
 
