@@ -2,9 +2,11 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
-## 1.0.1
+## 1.0.2
 
-### Added
+- Re-exposing the `state_dec` object in the SCT context so it can be used by `shellwhat_ext` and `sqlwhat_ext`.
+
+## 1.0.1
 
 - In `shellwhat`, it is possible that `_msg` is None after calling `state.ast_dispatcher.describe`. This is now handled by including a default message for `_msg`.
 
