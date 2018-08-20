@@ -2,6 +2,12 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.0.1
+
+### Added
+
+- In `shellwhat`, it is possible that `_msg` is None after calling `state.ast_dispatcher.describe`. This is now handled by including a default message for `_msg`.
+
 ## 1.0.0
 
 **Contains breaking changes!**
