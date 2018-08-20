@@ -134,6 +134,7 @@ def create_sct_context(State, sct_dict, root_state = None):
     sct_ctx = {k: state_dec(v) for k, v in sct_dict.items()}
 
     ctx = {**sct_ctx}
+    ctx['state_dec'] = state_dec # needed by ext packages
     ctx['Ex'] = ExGen(root_state, sct_ctx)
     ctx['F'] = partial(F, attr_scts = sct_ctx)
 
