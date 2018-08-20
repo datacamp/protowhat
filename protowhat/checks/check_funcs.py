@@ -65,6 +65,7 @@ def check_node(state, name, index=0, missing_msg="Check the {ast_path}. Could no
         # use speaker on ast dialect module to get message, or fall back to generic
         ast_path = state.get_ast_path() or "highlighted code"
         _msg = state.ast_dispatcher.describe(sol_stmt, missing_msg, index=index, ast_path=ast_path)
+        if _msg is None: _msg = MSG_CHECK_FALLBACK
         state.do_test(_msg)
 
     action = {'type': 'check_node', 'kwargs': {'name': name, 'index': index}, 'node': stu_stmt}
@@ -109,6 +110,7 @@ def check_edge(state, name, index=None, missing_msg="Check the {ast_path}. Could
     # use speaker on ast dialect module to get message, or fall back to generic
     ast_path = state.get_ast_path() or "highlighted code"
     _msg = state.ast_dispatcher.describe(state.student_ast, missing_msg, field=name, index=index, ast_path=ast_path)
+    if _msg is None: _msg = MSG_CHECK_FALLBACK
 
     try: 
         stu_attr = getattr(state.student_ast, name)
