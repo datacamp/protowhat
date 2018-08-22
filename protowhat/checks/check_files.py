@@ -2,12 +2,11 @@ from pathlib import Path
 from collections.abc import Mapping
 
 def check_file(state, fname,
-               msg = "Did you create a file named `{}`?",
-               msg_is_dir = "Want to check a file named `{}`, but found a directory.",
+               missing_msg = "Did you create a file named `{}`?",
+               is_dir_msg = "Want to check a file named `{}`, but found a directory.",
                parse = True,
-               use_fs = False,
-               use_solution = True
-               ):
+               use_fs = True,
+               use_solution = False):
     """Test whether file exists, and make its contents the student code.
     
     Note: this SCT fails if the file is a directory.
@@ -15,14 +14,14 @@ def check_file(state, fname,
 
     if use_fs:
         p = Path(fname)
-        if not p.exists(): state.do_test(msg.format(fname))          # test file exists
-        if     p.is_dir(): state.do_test(msg_is_dir.format(fname))   # test its not a dir
+        if not p.exists(): state.do_test(missing_msg.format(fname))  # test file exists
+        if     p.is_dir(): state.do_test(is_dir_msg.format(fname))   # test its not a dir
 
         code = p.read_text()
     else:
         code = _get_fname(state, 'student_code', fname)
 
-        if code is None: state.do_test(msg.format(fname))           # test file exists
+        if code is None: state.do_test(missing_msg.format(fname))           # test file exists
 
     sol_kwargs = {'solution_code': None, 'solution_ast': None}
     if use_solution:
@@ -32,11 +31,11 @@ def check_file(state, fname,
         sol_kwargs['solution_ast'] = state.ast_dispatcher.parse(sol_code) if parse else None
 
     return state.to_child(
-                student_code = code,
-                student_ast  = state.ast_dispatcher.parse(code) if parse else None,
-                fname = fname,
-                **sol_kwargs
-                )
+        student_code = code,
+        student_ast  = state.ast_dispatcher.parse(code) if parse else None,
+        fname = fname,
+        **sol_kwargs
+    )
 
 def _get_fname(state, attr, fname):
     code_dict = getattr(state, attr)
@@ -47,10 +46,10 @@ def _get_fname(state, attr, fname):
     return code_dict.get(fname)
 
 
-def has_dir(state, fname, msg = "Did you create a directory named `{}`?"):
+def has_dir(state, fname, incorrect_msg = "Did you create a directory named `{}`?"):
     """Test whether a directory exists."""
     if not Path(fname).is_dir():
-        state.do_test(msg.format(fname))
+        state.do_test(incorrect_msg.format(fname))
 
     return state
 
