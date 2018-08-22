@@ -52,7 +52,7 @@ def test_initial_state():
 
 def test_check_file_use_fs(state, tf):
     state.solution_code = { tf.name: '3 + 3' }
-    child = cf.check_file(state, tf.name, use_fs = True)
+    child = cf.check_file(state, tf.name, use_solution = True)
     assert child.student_code == '1 + 1'
     assert_equal_ast(child.student_ast, ast.parse(child.student_code))
     assert child.solution_code == '3 + 3'
@@ -61,7 +61,7 @@ def test_check_file_use_fs(state, tf):
 
 def test_check_file_use_fs_no_parse(state, tf):
     state.solution_code = { tf.name: '3 + 3' }
-    child = cf.check_file(state, tf.name, parse = False, use_fs = True)
+    child = cf.check_file(state, tf.name, parse = False)
     assert child.student_code == '1 + 1'
     assert child.student_ast is None
     assert child.solution_ast is None
@@ -69,7 +69,7 @@ def test_check_file_use_fs_no_parse(state, tf):
         assert check_node(child, 'Expr', 0)
 
 def test_check_no_sol(state, tf):
-    child = cf.check_file(state, tf.name, use_fs = True, use_solution = False)
+    child = cf.check_file(state, tf.name, use_fs = True)
     assert child.solution_code == None
 
 def test_check_dir(state):
@@ -90,13 +90,13 @@ def code_state():
         )
 
 def test_check_file(code_state):
-    child = cf.check_file(code_state, 'script1.py')
+    child = cf.check_file(code_state, 'script1.py', use_fs=False, use_solution=True)
     assert child.student_code == "1 + 1"
     assert_equal_ast(child.student_ast, ast.parse(child.student_code))
     assert_equal_ast(child.solution_ast, ast.parse(child.solution_code))
 
 def test_check_file_no_parse(code_state):
-    child = cf.check_file(code_state, 'script1.py', parse = False)
+    child = cf.check_file(code_state, 'script1.py', use_fs=False, parse = False, use_solution=True)
     assert child.student_code == "1 + 1"
     assert child.student_ast is None
     assert child.solution_ast is None
