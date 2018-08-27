@@ -134,7 +134,7 @@ def has_code(state, text, incorrect_msg="Check the {ast_path}. The checker expec
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
-        text : text that student code must contain.
+        text : text that student code must contain. Can be a regex pattern or a simple string.
         incorrect_msg: feedback message if text is not in student code.
         fixed: whether to match text exactly, rather than using regular expressions.
 

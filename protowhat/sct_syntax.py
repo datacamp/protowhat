@@ -97,18 +97,17 @@ class ExGen:
     def __call__(self, state = None):
         """Returns the current code state as a Chain instance.
 
+        This allows SCTs to be run without including their 1st argument, ``state``.
+
+        When writing SCTs on DataCamp, no State argument to ``Ex`` is necessary.
+        The exercise State is built for you.
+
         Args:
             state: a State instance, which contains the student/solution code and results.
 
-        This allows SCTs to be run without including their 1st argument, ``state``.
-
-        Note:
-            When writing SCTs on DataCamp, no State argument to ``Ex`` is necessary.
-            The exercise State is built for you.
-
         :Example:
         
-            ::
+            code ::
                 
                 # How to write SCT on DataCamp.com
                 Ex().has_code(text="SELECT id")

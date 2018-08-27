@@ -11,11 +11,12 @@ def fail(state, incorrect_msg="fail"):
 def multi(state, *tests):
     """Run multiple subtests. Return original state (for chaining).
 
+    This function could be thought as an AND statement, since all tests it runs must pass
+
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
         args: one or more sub-SCTs to run.
 
-    
     :Example:
         The SCT below runs run two has_code cases.. ::
 
@@ -27,10 +28,6 @@ def multi(state, *tests):
                 check_edge('where_clause'),
                 check_edge('limit_clause')
             )
-
-    Note:
-        This function could be thought as an AND statement, since all tests it runs must pass
-
     """
 
     for arg in tests:
@@ -48,6 +45,10 @@ def multi(state, *tests):
 def check_not(state, *tests, incorrect_msg):
     """Run multiple subtests that should fail. If all subtests fail, returns original state (for chaining)
 
+    - This function is currently only tested in working with ``has_code()`` in the subtests.
+    - This function can be thought as a ``NOT(x OR y OR ...)`` statement, since all tests it runs must fail
+    - This function can be considered a direct counterpart of multi.
+
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
         *tests: one or more sub-SCTs to run.
@@ -63,12 +64,7 @@ def check_not(state, *tests, incorrect_msg):
                 incorrect_msg="Don't use `INNER` or `OUTER`!"
             )
 
-        If students use INNER (JOIN) or OUTER (JOIN) in their code, this test will fail.
-
-    Note:
-        - This function is currently only tested in working with has_code in the subtests.
-        - This function can be thought as a NOT(x OR y OR ...) statement, since all tests it runs must fail
-        - This function can be considered a direct counterpart of multi.
+        If students use ``INNER (JOIN)`` or ``OUTER (JOIN)`` in their code, this test will fail.
 
     """
 

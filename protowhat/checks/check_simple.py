@@ -1,6 +1,6 @@
 def has_chosen(state, correct, msgs):
     """Verify exercises of the type MultipleChoiceExercise
-    
+
     Args:
         state:    State instance describing student and solution code. Can be omitted if used with Ex().
         correct:  index of correct option, where 1 is the first option.
@@ -11,11 +11,6 @@ def has_chosen(state, correct, msgs):
         of which is correct.::
 
             Ex().has_chosen(1, ['Correct!', 'Incorrect. Try again!'])
-
-    Note:
-    
-        ``has_chosen()`` uses 1-based indexing in order to work with Datacamp's campus app.
-
     """
 
     ctxt = {}
