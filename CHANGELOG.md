@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.1.1
+
+- Maintenance on docs.
+
 ## 1.1.0
 
 - Update argument names and argument defaults for file-related checks.
