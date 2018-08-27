@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.1.0
+
+- Update argument names and argument defaults for file-related checks.
+
 ## 1.0.2
 
 - Re-exposing the `state_dec` object in the SCT context so it can be used by `shellwhat_ext` and `sqlwhat_ext`.
