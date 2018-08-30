@@ -174,7 +174,15 @@ def has_code(state, text, incorrect_msg="Check the {ast_path}. The checker expec
 
     # fallback on using complete student code if no ast
     ParseError = state.ast_dispatcher.ParseError
-    stu_text = stu_ast._get_text(stu_code) if not isinstance(stu_ast, ParseError) else stu_code
+    def get_text(ast, code):
+        if isinstance(ast, ParseError):
+            return code
+        try:
+            return ast._get_text(code)
+        except:
+            return code
+
+    stu_text = get_text(stu_ast, stu_code)
 
     _msg = incorrect_msg.format(ast_path = state.get_ast_path() or "highlighted code", text = text)
 
