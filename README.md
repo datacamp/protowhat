@@ -6,7 +6,7 @@
 
 `protowhat` is a utility package required by `shellwhat` and `sqlwhat` packages, used for writing Submission Correctness Tests SCTs for interactive Shell and SQL exercises on DataCamp. It contains shared functionality related to SCT syntax, selectors and state manipulation.
 
-- If you are new to teaching on DataCamp, check out https://authoring.datacamp.com.
+- If you are new to teaching on DataCamp, check out https://instructor-support.datacamp.com.
 - If you want to learn what SCTs are and how they work, visit [this article](https://authoring.datacamp.com/courses/exercises/technical-details/sct.html) specifically.
 - For a deep dive in `protowhat`, consult https://protowhat.readthedocs.io.
 
