@@ -18,6 +18,7 @@ class State:
                  student_result,
                  solution_result,
                  reporter,
+                 force_diagnose = False,
                  solution_ast = None,
                  student_ast = None,
                  fname = None,
