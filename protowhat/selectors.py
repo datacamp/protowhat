@@ -52,7 +52,7 @@ class Dispatcher:
         self.safe_parsing = safe_parsing
 
         self.ParseError = getattr(self.ast, 'ParseError', None) or \
-                          getattr(self.ast, 'AntlrException', None)
+                          getattr(self.ast.antlr_ast, 'AntlrException', None)
 
     def __call__(self, name, index, node, *args, **kwargs):
         # TODO: gentle error handling
