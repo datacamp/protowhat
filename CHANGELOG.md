@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.2.0
+
+- Update to work with new ANTLR library versions
+
 ## 1.1.2
 
 - Fix in `has_code()` that was causing issues in some cases.
