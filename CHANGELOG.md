@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.3.0
+
+- Support `force_diagnose` State option to force passing `diagnose` tests in `check_correct`.
+
 ## 1.2.0
 
 - Update to work with new ANTLR library versions
