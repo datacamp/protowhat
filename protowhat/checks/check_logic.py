@@ -141,9 +141,17 @@ def check_correct(state, check, diagnose):
             )
 
     """
+    feedback = None
+    try:
+        multi(state, check)
+    except TestFail as e:
+        feedback = e.feedback
 
-    def diagnose_and_check(state):
-        # use multi twice, since diagnose and check may be lists of tests
-        multi(state, diagnose, check)
+    try:
+        multi(state, diagnose)
+    except TestFail as e:
+        if feedback is not None or state.force_diagnose:
+            feedback = e.feedback
 
-    check_or(state, diagnose_and_check, check)
+    if feedback is not None:
+        state.do_test(feedback.message, highlight=feedback.astobj)

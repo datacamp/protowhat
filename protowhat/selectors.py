@@ -1,5 +1,4 @@
 from ast import NodeVisitor, AST
-from collections.abc import Sequence
 import inspect
 import importlib
 
