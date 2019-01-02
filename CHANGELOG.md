@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.4.0
+
+- Refactor based on refactor in `antlr-ast>=0.4.1`, `antlr-plsql>=0.7.0` and `antlr-tsql>=0.11.0`
+
 ## 1.3.0
 
 - Support `force_diagnose` State option to force passing `diagnose` tests in `check_correct`.
