@@ -15,13 +15,14 @@ def has_chosen(state, correct, msgs):
 
     ctxt = {}
     exec(state.student_code, globals(), ctxt)
-    sel_indx = ctxt['selected_option']
+    sel_indx = ctxt["selected_option"]
     if sel_indx != correct:
-        state.do_test(msgs[sel_indx-1])
+        state.do_test(msgs[sel_indx - 1])
     else:
-        state.reporter.success_msg = msgs[correct-1]
+        state.reporter.success_msg = msgs[correct - 1]
 
     return state
+
 
 def success_msg(state, msg):
     """

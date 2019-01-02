@@ -2,11 +2,13 @@ from protowhat.Test import TestFail
 from types import GeneratorType
 from functools import partial
 
+
 def fail(state, incorrect_msg="fail"):
     """Always fails the SCT, with an optional msg."""
     state.do_test(incorrect_msg)
 
     return state
+
 
 def multi(state, *tests):
     """Run multiple subtests. Return original state (for chaining).
@@ -32,7 +34,8 @@ def multi(state, *tests):
 
     for arg in tests:
         # when input is a single test, make iterable
-        if callable(arg): arg = [arg]
+        if callable(arg):
+            arg = [arg]
 
         for test in arg:
             # assume test is function needing a state argument
@@ -41,6 +44,7 @@ def multi(state, *tests):
 
     # return original state, so can be chained
     return state
+
 
 def check_not(state, *tests, incorrect_msg):
     """Run multiple subtests that should fail. If all subtests fail, returns original state (for chaining)
@@ -70,8 +74,9 @@ def check_not(state, *tests, incorrect_msg):
 
     for arg in tests:
         # when input is a single test, make iterable
-        if callable(arg): arg = [arg]
-            
+        if callable(arg):
+            arg = [arg]
+
         for test in arg:
             try:
                 test(state)
@@ -83,9 +88,10 @@ def check_not(state, *tests, incorrect_msg):
     # return original state, so can be chained
     return state
 
+
 def check_or(state, *tests):
     """Test whether at least one SCT passes.
-    
+
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
         tests: one or more sub-SCTs to run.
@@ -111,21 +117,24 @@ def check_or(state, *tests):
 
     for arg in tests:
         # when input is a single test, make iterable
-        if callable(arg): arg = [arg]
+        if callable(arg):
+            arg = [arg]
 
         for test in arg:
             try:
                 test(state)
                 success = True
             except TestFail as e:
-                if not first_feedback: first_feedback = e.feedback
+                if not first_feedback:
+                    first_feedback = e.feedback
             if success:
                 return
-    
+
     state.do_test(first_feedback.message, highlight=first_feedback.astobj)
 
+
 def check_correct(state, check, diagnose):
-    """Allows feedback from a diagnostic SCT, only if a check SCT fails. 
+    """Allows feedback from a diagnostic SCT, only if a check SCT fails.
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
