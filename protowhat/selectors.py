@@ -9,22 +9,6 @@ class Selector(NodeVisitor):
         self.priority = src._priority if priority is None else priority
         self.out = []
 
-    # TODO: needed to repeat this function, since _fields is more complex on the
-    #       custom ASTs, should simplify _fields, so this can be removed..
-    @staticmethod
-    def iter_fields(node): 
-        return [(k, getattr(node, k)) for k in node._get_field_names() if hasattr(node, k)]
-
-    def generic_visit(self, node):
-        """Called if no explicit visitor function exists for a node."""
-        for field, value in self.iter_fields(node):
-            if isinstance(value, list):
-                for item in value:
-                    if isinstance(item, AST):
-                        self.visit(item)
-            elif isinstance(value, AST):
-                self.visit(value)
-
     def visit(self, node, head=False):
         if head: return super().visit(node)
 
@@ -50,8 +34,7 @@ class Dispatcher:
         self.ast = ast
         self.safe_parsing = safe_parsing
 
-        self.ParseError = getattr(self.ast, 'ParseError', None) or \
-                          getattr(self.ast.antlr_ast, 'AntlrException', None)
+        self.ParseError = getattr(self.ast, 'ParseError', None)
 
     def __call__(self, name, index, node, *args, **kwargs):
         # TODO: gentle error handling
@@ -75,11 +58,11 @@ class Dispatcher:
         if kwargs.get('index') is not None:
             phrase = "{} entry in the " if field else "{} "
             kwargs['index'] = phrase.format(get_ord(kwargs['index'] + 1))
-        else: 
+        else:
             kwargs['index'] = ""
 
         if speaker:
-            return self.ast.speaker.describe(node, field = field, 
+            return self.ast.speaker.describe(node, field = field,
                                              fmt = msg, **kwargs)
 
     @classmethod
