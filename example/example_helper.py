@@ -3,7 +3,7 @@ import inspect
 import asttokens
 
 class PythonAst:
-    def _get_text(self, code): 
+    def _get_text(self, code):
         atok = asttokens.ASTTokens(code, tree = self)
         return atok.get_text(self)
 
@@ -19,4 +19,4 @@ def patch_ast():
 
     # add AstNode, and ParseError classes for Dispatcher
     ast.AstNode = PythonAst
-    ast.ParseError = Exception
+    ast.ParseError = SyntaxError
