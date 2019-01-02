@@ -1,15 +1,22 @@
-from protowhat.selectors import Selector, Dispatcher
-from protowhat.State import State
-import importlib
-from protowhat.Reporter import Reporter
-from protowhat.Test import TestFail as TF
+from protowhat.selectors import Selector
+
 import pytest
 
-@pytest.mark.xfail
+
 def test_selector_standalone():
-    from ast import Expr, Num        # use python's builtin ast library
+    # use python's builtin ast library
+    from ast import Expr, Num
     Expr._priority = 0; Num._priority = 1
     node = Expr(value = Num(n = 1))
+
     sel = Selector(Num)
     sel.visit(node)
     assert isinstance(sel.out[0], Num)
+
+    sel = Selector(Expr)
+    sel.visit(node)
+    assert isinstance(sel.out[0], Expr)
+
+    sel = Selector(Expr)
+    sel.visit(node, head=True)
+    assert len(sel.out) == 0
