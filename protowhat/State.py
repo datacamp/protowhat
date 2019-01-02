@@ -10,6 +10,9 @@ class DummyParser:
     def parse(self, *args, **kwargs):
         return self.ParseError()
 
+    def describe(self, *args, **kwargs):
+        return "code"
+
 
 class State:
     def __init__(
