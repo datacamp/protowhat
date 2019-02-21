@@ -29,6 +29,7 @@ class AstNode(AST):
 
 
 class AstModule:
+    # TODO: split parse and dump
     def __init__(self, parse=None, ParseError=Exception, classes=None, AstNode=AstNode):
         if parse:
             self.parse = parse
@@ -59,6 +60,7 @@ class AstModule:
         return obj
 
     def _instantiate_node(self, type_str):
+        # TODO: implement on AstNode (+ interface to get classes)
         cls = self.classes.get(type_str, None)
         if not cls:
             cls = type(type_str, (AstNode,), {})
@@ -68,6 +70,7 @@ class AstModule:
 
     @classmethod
     def from_parse_dict(cls, parse):
+        # TODO: not used?
         obj = cls(None)
         obj.parse = lambda cmd, strict: obj.load(parse(cmd, strict))
         return obj
