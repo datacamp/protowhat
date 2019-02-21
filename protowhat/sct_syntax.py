@@ -52,13 +52,13 @@ class Chain:
     def __rshift__(self, f):
         if self._waiting_on_call:
             self._double_attr_error()
-        elif type(f) == Chain:
+        elif isinstance(f, Chain) and not isinstance(f, F):
             raise BaseException(
-                "did you use a result of the Ex() function on the right hand side of the + operator?"
+                "did you use a result of the Ex() function on the right hand side of the >> operator?"
             )
         elif not callable(f):
             raise BaseException(
-                "right hand side of + operator should be an SCT, so must be callable!"
+                "right hand side of >> operator should be an SCT, so must be callable!"
             )
         else:
             chain = self._sct_copy(f)
@@ -82,14 +82,14 @@ class F(Chain):
         if not self._crnt_sct:
             state = kwargs.get("state") or args[0]
             return reduce(
-                lambda s, cd: self._call_from_data(*cd, state=s), self._stack, state
+                lambda s, cd: self._call_from_data(s, *cd), self._stack, state
             )
         else:
             call_data = (self._crnt_sct, args, kwargs)
             return self.__class__(self._stack + [call_data], self._attr_scts)
 
     @staticmethod
-    def _call_from_data(f, args, kwargs, state):
+    def _call_from_data(state, f, args, kwargs):
         return f(state, *args, **kwargs)
 
     @classmethod
