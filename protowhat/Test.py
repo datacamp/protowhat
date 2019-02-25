@@ -6,7 +6,7 @@ class Feedback(object):
     def get_line_info(self):
         try:
             if self.astobj is not None:
-                return self.astobj._get_pos()
+                return self.astobj.get_position()
             else:
                 return {}
         except:
