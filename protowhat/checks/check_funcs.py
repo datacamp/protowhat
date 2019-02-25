@@ -131,6 +131,8 @@ def check_edge(
     """
     try:
         sol_attr = getattr(state.solution_ast, name)
+        if sol_attr and isinstance(sol_attr, list) and index is None:
+            index = 0
         if index is not None:
             sol_attr = sol_attr[index]
     except IndexError:
