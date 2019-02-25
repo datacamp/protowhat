@@ -5,23 +5,20 @@ class AstNode(AST):
     _fields = []
     _priority = 1
 
-    def _get_field_names(self):
-        return self._fields
-
     def _get_text(self, text):
         raise NotImplemented()
 
-    def _get_pos(self):
+    def get_position(self):
         raise NotImplemented()
 
     def __str__(self):
-        els = [k for k in self._get_field_names() if getattr(self, k, None) is not None]
+        els = [k for k in self._fields if getattr(self, k, None) is not None]
         return "{}: {}".format(self.__class__.__name__, ", ".join(els))
 
     def __repr__(self):
         field_reps = [
             (k, repr(getattr(self, k)))
-            for k in self._get_field_names()
+            for k in self._fields
             if getattr(self, k, None) is not None
         ]
         args = ", ".join("{} = {}".format(k, v) for k, v in field_reps)
