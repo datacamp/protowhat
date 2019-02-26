@@ -12,10 +12,9 @@ def requires_ast(f):
 
         # fail if no ast parser in use
         if any(ast is None for ast in state_ast):
-            pass
-            # raise TypeError(
-            #     "Trying to use ast, but it is None. Are you using a parser?"
-            # )
+            raise TypeError(
+                "Trying to use ast, but it is None. Are you using a parser? {} {}".format(args, kwargs)
+            )
 
         # check whether the parser passed or failed for some code
         ParseError = state.ast_dispatcher.ParseError
