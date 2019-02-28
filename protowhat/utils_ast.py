@@ -5,7 +5,7 @@ class AstNode(AST):
     _fields = []
     _priority = 1
 
-    def _get_text(self, text):
+    def get_text(self, text):
         raise NotImplemented()
 
     def get_position(self):
