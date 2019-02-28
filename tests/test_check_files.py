@@ -11,8 +11,6 @@ from protowhat.checks.check_funcs import check_node
 # TODO: selectors require a _priority attribute and _get_field_names
 #       this is a holdover from the sql ast modules
 ast.Expr._priority = 0
-ast.Module._get_field_names = lambda self: self._fields
-ast.Expr._get_field_names = lambda self: self._fields
 DUMMY_NODES = {'Expr': ast.Expr}
 
 class ParseHey:
@@ -37,7 +35,7 @@ def state():
         solution_code = "",
         reporter = Reporter(),
         # args below should be ignored
-        pre_exercise_code = "NA", 
+        pre_exercise_code = "NA",
         student_result = "", solution_result = "",
         student_conn = None, solution_conn = None,
         ast_dispatcher = Dispatcher(DUMMY_NODES, ParseHey())
@@ -83,7 +81,7 @@ def code_state():
         solution_code = {'script1.py': '3 + 3', 'script2.py': '4 + 4'},
         reporter = Reporter(),
         # args below should be ignored
-        pre_exercise_code = "NA", 
+        pre_exercise_code = "NA",
         student_result = "", solution_result = "",
         student_conn = None, solution_conn = None,
         ast_dispatcher = Dispatcher(DUMMY_NODES, ParseHey())

@@ -222,7 +222,7 @@ def has_code(
         if isinstance(ast, ParseError):
             return code
         try:
-            return ast._get_text(code)
+            return ast.get_text(code)
         except:
             return code
 
@@ -300,7 +300,7 @@ def has_equal_ast(
         if isinstance(ast, str):
             return ast
         try:
-            return ast._get_text(code)
+            return ast.get_text(code)
         except:
             return None
 
