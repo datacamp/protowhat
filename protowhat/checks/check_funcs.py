@@ -101,7 +101,7 @@ def check_node(
 def check_edge(
     state,
     name,
-    index=None,
+    index=0,
     missing_msg="Check the {ast_path}. Could not find the {index}{field_name}.",
 ):
     """Select an attribute from an abstract syntax tree (AST) node, using the attribute name.
@@ -109,7 +109,7 @@ def check_edge(
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
         name: the name of the attribute to select from current AST node.
-        index: entry to get from field. If too few entires, will fail with missing_msg.
+        index: entry to get from a list field. If too few entires, will fail with missing_msg.
         missing_msg: feedback message if attribute is not in student AST.
 
     :Example:
@@ -125,15 +125,13 @@ def check_edge(
             clause = check_edge(select, 'from_clause')
 
             # approach 2: with Ex and chaining ---------------------
-            select = Ex().check_node('SelectStmt', 0)     # get first select statement
-            clause =  select.check_edge('from_clause')    # get from_clause (a list)
-            clause2 = select.check_edge('from_clause', 0) # get first entry in from_clause
+            select = Ex().check_node('SelectStmt', 0)           # get first select statement
+            clause =  select.check_edge('from_clause', None)    # get from_clause (a list)
+            clause2 = select.check_edge('from_clause', 0)       # get first entry in from_clause
     """
     try:
         sol_attr = getattr(state.solution_ast, name)
-        if sol_attr and isinstance(sol_attr, list) and index is None:
-            index = 0
-        if index is not None:
+        if sol_attr and isinstance(sol_attr, list) and index is not None:
             sol_attr = sol_attr[index]
     except IndexError:
         raise IndexError("Can't get %s attribute" % name)
@@ -148,7 +146,7 @@ def check_edge(
 
     try:
         stu_attr = getattr(state.student_ast, name)
-        if index is not None:
+        if stu_attr and isinstance(stu_attr, list) and index is not None:
             stu_attr = stu_attr[index]
     except:
         state.do_test(_msg)
