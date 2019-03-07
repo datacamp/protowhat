@@ -38,7 +38,7 @@ def state():
         pre_exercise_code = "NA",
         student_result = "", solution_result = "",
         student_conn = None, solution_conn = None,
-        ast_dispatcher = Dispatcher(DUMMY_NODES, ParseHey())
+        ast_dispatcher = Dispatcher(ast.AST, DUMMY_NODES, ParseHey())
         )
 
 def test_initial_state():
@@ -46,7 +46,7 @@ def test_initial_state():
           reporter = Reporter(), pre_exercise_code = "",
           student_result = "", solution_result = "",
           student_conn = None, solution_conn = None,
-          ast_dispatcher = Dispatcher(DUMMY_NODES, ParseHey()))
+          ast_dispatcher = Dispatcher(ast.AST, DUMMY_NODES, ParseHey()))
 
 def test_check_file_use_fs(state, tf):
     state.solution_code = { tf.name: '3 + 3' }
@@ -84,7 +84,7 @@ def code_state():
         pre_exercise_code = "NA",
         student_result = "", solution_result = "",
         student_conn = None, solution_conn = None,
-        ast_dispatcher = Dispatcher(DUMMY_NODES, ParseHey())
+        ast_dispatcher = Dispatcher(ast.AST, DUMMY_NODES, ParseHey())
         )
 
 def test_check_file(code_state):

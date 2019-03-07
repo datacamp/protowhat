@@ -4,8 +4,10 @@ import importlib
 
 
 class Selector(NodeVisitor):
-    def __init__(self, src, priority=None):
+    def __init__(self, src, src_name=None, strict=True, priority=None):
         self.src = src
+        self.src_name = src_name
+        self.strict = strict
         self.priority = src._priority if priority is None else priority
         self.out = []
 
@@ -23,29 +25,44 @@ class Selector(NodeVisitor):
             self.visit(item)
 
     def is_match(self, node):
-        if type(node) is self.src:
-            return True
+        if self.strict:
+            if type(node) is self.src:
+                return True
+            else:
+                return False
         else:
-            return False
+            if isinstance(node, self.src) and (
+                self.src_name is None or self.src_name == node.__class__.__name__
+            ):
+                return True
+            else:
+                return False
 
     def has_priority_over(self, node):
         return self.priority > node._priority
 
 
 class Dispatcher:
-    def __init__(self, nodes, ast=None, safe_parsing=True):
+    def __init__(self, node_cls, nodes=None, ast=None, safe_parsing=True):
         """Wrapper to instantiate and use a Selector using node names."""
-        self.nodes = nodes
+        self.node_cls = node_cls
+        self.nodes = nodes or []
         self.ast = ast
         self.safe_parsing = safe_parsing
 
         self.ParseError = getattr(self.ast, "ParseError", None)
 
     def __call__(self, name, index, node, *args, **kwargs):
-        # TODO: gentle error handling
-        ast_cls = self.nodes[name]
+        if name in self.nodes:
+            ast_cls = self.nodes[name]
+            strict_selector = True
+        else:
+            ast_cls = self.node_cls
+            strict_selector = False
 
-        selector = Selector(ast_cls, *args, **kwargs)
+        selector = Selector(
+            ast_cls, src_name=name, strict=strict_selector, *args, **kwargs
+        )
         selector.visit(node, head=True)
 
         return selector.out[index]
@@ -81,7 +98,7 @@ class Dispatcher:
             for k, v in vars(mod).items()
             if (inspect.isclass(v) and issubclass(v, mod.AstNode))
         }
-        dispatcher = cls(ast_nodes, ast=mod)
+        dispatcher = cls(mod.AstNode, nodes=ast_nodes, ast=mod)
         return dispatcher
 
 
