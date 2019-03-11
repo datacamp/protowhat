@@ -2,6 +2,15 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.5.0
+
+- Update parsing class interface for compatibility with antlr-ast
+- Support finding dynamic nodes in AST tree (instead of just custom defined nodes)
+- Change `ckeck_edge` default value of `index` argument from `None` to `0`
+  - This is done to break less content
+  - Now: explicitly define the value of the `index` argument
+  - Later: revert default change and remove unnecessary explicit setting of the `index` argument
+
 ## 1.4.0
 
 - Refactor based on refactor in `antlr-ast>=0.4.1`, `antlr-plsql>=0.7.0` and `antlr-tsql>=0.11.0`
