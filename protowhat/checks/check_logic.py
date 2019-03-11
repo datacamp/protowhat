@@ -111,7 +111,6 @@ def check_or(state, *tests):
                 check_edge('limit_clause')
             )
     """
-
     success = False
     first_feedback = None
 

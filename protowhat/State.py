@@ -2,6 +2,9 @@ from copy import copy
 import inspect
 from jinja2 import Template
 
+from protowhat.Feedback import Feedback
+from protowhat.Test import Fail
+
 
 class DummyParser:
     def __init__(self):
@@ -82,10 +85,17 @@ class State:
         except StopIteration:
             return self.ast_dispatcher.describe(self.student_ast, "{node_name}")
 
-    def do_test(self, *args, highlight=None, **kwargs):
+    def do_test(self, feedback_msg, highlight=None):
+        # TODO: rename to `raise`
         highlight = self.student_ast if highlight is None else highlight
+        feedback = Feedback(feedback_msg, highlight)
+        test = Fail(feedback)
 
-        return self.reporter.do_test(*args, highlight=highlight, **kwargs)
+        return self.run_test(test)
+
+    def run_test(self, test):
+        # TODO: rename to `do_test`
+        return self.reporter.do_test(test)
 
     def to_child(self, append_message="", **kwargs):
         """Basic implementation of returning a child state"""

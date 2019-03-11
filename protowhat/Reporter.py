@@ -1,6 +1,6 @@
 import re
 import markdown2
-from protowhat.Test import TestFail, Feedback
+from protowhat.Test import TestFail, Test
 
 """
 This file holds the reporter class.
@@ -13,13 +13,10 @@ class Reporter:
     This class holds the feedback- or success message and tracks whether there are failed tests
     or not. All tests are executed trough do_test() in the Reporter.
     """
-
-    active_reporter = None
-
     def __init__(self, errors=None):
-        self.success_msg = "Great work!"
         self.errors = errors
         self.errors_allowed = False
+        self.success_msg = "Great work!"
 
     def get_errors(self):
         return self.errors
@@ -27,33 +24,34 @@ class Reporter:
     def allow_errors(self):
         self.errors_allowed = True
 
-    def do_test(self, feedback_msg, highlight=None):
+    def do_test(self, test):
         """Raise failing test.
 
         Raise a ``TestFail`` object, containing the feedback message and highlight information.
         """
+        if isinstance(test, Test):
+            test.test()
+            result = test.result
+            if not result:
+                feedback = test.get_feedback()
+                raise TestFail(feedback, self.build_failed_payload(feedback))
 
-        feedback = Feedback(feedback_msg, highlight)
-        raise TestFail(feedback, self.build_failed_payload(feedback))
+        else:
+            result = None
+            test()  # run function for side effects
 
-    @staticmethod
-    def formatted_line_info(line_info):
-        cpy = {**line_info}
-        for k in ["column_start", "column_end"]:
-            if k in cpy:
-                cpy[k] += 1
-        return cpy
+        return result
 
     def build_failed_payload(self, feedback):
         return {
             "correct": False,
             "message": Reporter.to_html(feedback.message),
-            **self.formatted_line_info(feedback.get_line_info()),
+            **feedback.get_formatted_line_info(),
         }
 
     def build_final_payload(self):
         if self.errors and not self.errors_allowed:
-            feedback_msg = "Your code generated an error. Fix it and try again!"
+            feedback_msg = "Have a look at the console: your code contains an error. Fix it and try again!"
             return {"correct": False, "message": Reporter.to_html(feedback_msg)}
         else:
             return {"correct": True, "message": Reporter.to_html(self.success_msg)}
