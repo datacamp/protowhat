@@ -1,6 +1,8 @@
 from pathlib import Path
 from collections.abc import Mapping
 
+from protowhat.Feedback import Feedback
+
 
 def check_file(
     state,
@@ -19,16 +21,16 @@ def check_file(
     if use_fs:
         p = Path(fname)
         if not p.exists():
-            state.do_test(missing_msg.format(fname))  # test file exists
+            state.report(Feedback(missing_msg.format(fname)))  # test file exists
         if p.is_dir():
-            state.do_test(is_dir_msg.format(fname))  # test its not a dir
+            state.report(Feedback(is_dir_msg.format(fname)))  # test its not a dir
 
         code = p.read_text()
     else:
         code = _get_fname(state, "student_code", fname)
 
         if code is None:
-            state.do_test(missing_msg.format(fname))  # test file exists
+            state.report(Feedback(missing_msg.format(fname)))  # test file exists
 
     sol_kwargs = {"solution_code": None, "solution_ast": None}
     if use_solution:
@@ -61,7 +63,6 @@ def _get_fname(state, attr, fname):
 def has_dir(state, fname, incorrect_msg="Did you create a directory named `{}`?"):
     """Test whether a directory exists."""
     if not Path(fname).is_dir():
-        state.do_test(incorrect_msg.format(fname))
+        state.report(Feedback(incorrect_msg.format(fname)))
 
     return state
-

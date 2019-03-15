@@ -48,7 +48,7 @@ def test_check_or_fail(state):
     [fails, fails]
 ])
 def test_check_not_pass(state, arg1):
-    cl.check_not(state, arg1, incorrect_msg='fail')
+    cl.check_not(state, arg1, msg='fail')
 
 @pytest.mark.parametrize('arg1', [
     passes,
@@ -57,7 +57,7 @@ def test_check_not_pass(state, arg1):
 ])
 def test_check_not_fail(state, arg1):
     with pytest.raises(TF, match='boom'):
-        cl.check_not(state, arg1, incorrect_msg='boom')
+        cl.check_not(state, arg1, msg='boom')
 
 def test_check_correct_pass(state):
     cl.check_correct(state, passes, fails)

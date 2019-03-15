@@ -1,3 +1,6 @@
+from protowhat.Feedback import Feedback
+
+
 def has_chosen(state, correct, msgs):
     """Verify exercises of the type MultipleChoiceExercise
 
@@ -17,7 +20,7 @@ def has_chosen(state, correct, msgs):
     exec(state.student_code, globals(), ctxt)
     sel_indx = ctxt["selected_option"]
     if sel_indx != correct:
-        state.do_test(msgs[sel_indx - 1])
+        state.report(Feedback(msgs[sel_indx - 1]))
     else:
         state.reporter.success_msg = msgs[correct - 1]
 
@@ -41,4 +44,3 @@ def success_msg(state, msg):
     state.reporter.success_msg = msg
 
     return state
-
