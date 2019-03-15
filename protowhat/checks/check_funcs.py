@@ -1,6 +1,8 @@
 from functools import partial, wraps
 import copy
 
+from protowhat.Feedback import Feedback
+
 MSG_CHECK_FALLBACK = "Your submission is incorrect. Try again!"
 
 
@@ -13,7 +15,9 @@ def requires_ast(f):
         # fail if no ast parser in use
         if any(ast is None for ast in state_ast):
             raise TypeError(
-                "Trying to use ast, but it is None. Are you using a parser? {} {}".format(args, kwargs)
+                "Trying to use ast, but it is None. Are you using a parser? {} {}".format(
+                    args, kwargs
+                )
             )
 
         # check whether the parser passed or failed for some code
@@ -84,7 +88,7 @@ def check_node(
         )
         if _msg is None:
             _msg = MSG_CHECK_FALLBACK
-        state.do_test(_msg)
+        state.report(Feedback(_msg))
 
     action = {
         "type": "check_node",
@@ -149,11 +153,11 @@ def check_edge(
         if stu_attr and isinstance(stu_attr, list) and index is not None:
             stu_attr = stu_attr[index]
     except:
-        state.do_test(_msg)
+        state.report(Feedback(_msg))
 
     # fail if attribute exists, but is none only for student
     if stu_attr is None and sol_attr is not None:
-        state.do_test(_msg)
+        state.report(Feedback(_msg))
 
     action = {"type": "check_edge", "kwargs": {"name": name, "index": index}}
 
@@ -234,7 +238,7 @@ def has_code(
     res = text in stu_text if fixed else re.search(text, stu_text)
 
     if not res:
-        state.do_test(_msg)
+        state.report(Feedback(_msg))
 
     return state
 
@@ -309,10 +313,8 @@ def has_equal_ast(
         if sol_str
         else "Something is missing.",
     )
-    if exact and (sol_rep != stu_rep):
-        state.do_test(_msg)
-    elif not exact and (sol_rep not in stu_rep):
-        state.do_test(_msg)
+    if (exact and (sol_rep != stu_rep)) or (not exact and (sol_rep not in stu_rep)):
+        state.report(Feedback(_msg))
 
     return state
 
@@ -320,6 +322,6 @@ def has_equal_ast(
 def has_parsed_ast(state):
     asts = [state.student_ast, state.solution_ast]
     if any(isinstance(c, state.ast_dispatcher.ParseError) for c in asts):
-        state.do_test("AST did not parse")
+        state.report(Feedback("AST did not parse"))
 
     return state

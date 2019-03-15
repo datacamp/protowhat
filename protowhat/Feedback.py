@@ -1,12 +1,12 @@
 class Feedback:
     def __init__(self, message, astobj=None):
         self.message = message
-        self.astobj = astobj
+        self.highlight = astobj
 
     def get_line_info(self):
         try:
-            if self.astobj is not None:
-                return self.astobj.get_position()
+            if self.highlight is not None:
+                return self.highlight.get_position()
             else:
                 return {}
         except:

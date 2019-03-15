@@ -3,7 +3,7 @@ import inspect
 from jinja2 import Template
 
 from protowhat.Feedback import Feedback
-from protowhat.Test import Fail
+from protowhat.Test import Fail, Test
 
 
 class DummyParser:
@@ -85,16 +85,15 @@ class State:
         except StopIteration:
             return self.ast_dispatcher.describe(self.student_ast, "{node_name}")
 
-    def do_test(self, feedback_msg, highlight=None):
-        # TODO: rename to `raise`
-        highlight = self.student_ast if highlight is None else highlight
-        feedback = Feedback(feedback_msg, highlight)
+    def report(self, feedback: Feedback):
+        # TODO
+        if feedback.highlight is None:
+            feedback.highlight = self.student_ast
         test = Fail(feedback)
 
-        return self.run_test(test)
+        return self.do_test(test)
 
-    def run_test(self, test):
-        # TODO: rename to `do_test`
+    def do_test(self, test: Test):
         return self.reporter.do_test(test)
 
     def to_child(self, append_message="", **kwargs):

@@ -1,11 +1,11 @@
-from protowhat.Test import TestFail
-from types import GeneratorType
+from protowhat.Feedback import Feedback
+from protowhat.Test import TestFail, Fail
 from functools import partial
 
 
 def fail(state, incorrect_msg="fail"):
     """Always fails the SCT, with an optional msg."""
-    state.do_test(incorrect_msg)
+    state.do_test(Fail(Feedback(incorrect_msg)))
 
     return state
 
@@ -16,37 +16,32 @@ def multi(state, *tests):
     This function could be thought as an AND statement, since all tests it runs must pass
 
     Args:
-        state: State instance describing student and solution code. Can be omitted if used with Ex().
-        args: one or more sub-SCTs to run.
+        state: State instance describing student and solution code,  can be omitted if used with Ex()
+        tests: one or more sub-SCTs to run.
 
     :Example:
-        The SCT below runs run two has_code cases.. ::
+        The SCT below checks two has_code cases.. ::
 
             Ex().multi(has_code('SELECT'), has_code('WHERE'))
 
-        The SCT below checks that a SELECT statement has both a WHERE and LIMIT clause.. ::
+        The SCT below uses ``multi`` to 'branch out' to check that
+        the SELECT statement has both a WHERE and LIMIT clause.. ::
 
             Ex().check_node('SelectStmt', 0).multi(
                 check_edge('where_clause'),
                 check_edge('limit_clause')
             )
     """
-
-    for arg in tests:
-        # when input is a single test, make iterable
-        if callable(arg):
-            arg = [arg]
-
-        for test in arg:
-            # assume test is function needing a state argument
-            # partial state so reporter can test
-            test(state)
+    for test in iter_tests(tests):
+        # assume test is function needing a state argument
+        # partial state so reporter can test
+        state.do_test(partial(test, state))
 
     # return original state, so can be chained
     return state
 
 
-def check_not(state, *tests, incorrect_msg):
+def check_not(state, *tests, msg):
     """Run multiple subtests that should fail. If all subtests fail, returns original state (for chaining)
 
     - This function is currently only tested in working with ``has_code()`` in the subtests.
@@ -54,9 +49,9 @@ def check_not(state, *tests, incorrect_msg):
     - This function can be considered a direct counterpart of multi.
 
     Args:
-        state: State instance describing student and solution code. Can be omitted if used with Ex().
-        *tests: one or more sub-SCTs to run.
-        incorrect_msg: feedback message that is shown in case not all tests specified in ``*tests`` fail.
+        state: State instance describing student and solution code, can be omitted if used with Ex()
+        *tests: one or more sub-SCTs to run
+        msg: feedback message that is shown in case not all tests specified in ``*tests`` fail.
 
     :Example:
 
@@ -71,19 +66,13 @@ def check_not(state, *tests, incorrect_msg):
         If students use ``INNER (JOIN)`` or ``OUTER (JOIN)`` in their code, this test will fail.
 
     """
-
-    for arg in tests:
-        # when input is a single test, make iterable
-        if callable(arg):
-            arg = [arg]
-
-        for test in arg:
-            try:
-                test(state)
-            except TestFail:
-                # it fails, as expected, off to next one
-                continue
-            return state.do_test(incorrect_msg)
+    for test in iter_tests(tests):
+        try:
+            test(state)
+        except TestFail:
+            # it fails, as expected, off to next one
+            continue
+        return state.do_test(Fail(Feedback(msg)))
 
     # return original state, so can be chained
     return state
@@ -92,9 +81,11 @@ def check_not(state, *tests, incorrect_msg):
 def check_or(state, *tests):
     """Test whether at least one SCT passes.
 
+    If all of the tests fail, the feedback of the first test will be presented to the student.
+
     Args:
-        state: State instance describing student and solution code. Can be omitted if used with Ex().
-        tests: one or more sub-SCTs to run.
+        state: State instance describing student and solution code, can be omitted if used with Ex()
+        tests: one or more sub-SCTs to run
 
     :Example:
         The SCT below tests that the student typed either 'SELECT' or 'WHERE' (or both).. ::
@@ -114,22 +105,17 @@ def check_or(state, *tests):
     success = False
     first_feedback = None
 
-    for arg in tests:
-        # when input is a single test, make iterable
-        if callable(arg):
-            arg = [arg]
+    for test in iter_tests(tests):
+        try:
+            multi(state, test)
+            success = True
+        except TestFail as e:
+            if not first_feedback:
+                first_feedback = e.feedback
+        if success:
+            return state  # todo: add test
 
-        for test in arg:
-            try:
-                test(state)
-                success = True
-            except TestFail as e:
-                if not first_feedback:
-                    first_feedback = e.feedback
-            if success:
-                return
-
-    state.do_test(first_feedback.message, highlight=first_feedback.astobj)
+    state.do_test(Fail(first_feedback))
 
 
 def check_correct(state, check, diagnose):
@@ -155,6 +141,8 @@ def check_correct(state, check, diagnose):
     except TestFail as e:
         feedback = e.feedback
 
+    # todo: let if from except wrap try-except
+    #  only once teach uses force_diagnose
     try:
         multi(state, diagnose)
     except TestFail as e:
@@ -162,4 +150,19 @@ def check_correct(state, check, diagnose):
             feedback = e.feedback
 
     if feedback is not None:
-        state.do_test(feedback.message, highlight=feedback.astobj)
+        state.do_test(Fail(feedback))
+
+    return state  # todo: add test
+
+
+def iter_tests(tests):
+    for arg in tests:
+        if arg is None:
+            continue
+
+        # when input is a single test, make iterable
+        if callable(arg):
+            arg = [arg]
+
+        for test in arg:
+            yield test
