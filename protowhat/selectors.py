@@ -52,7 +52,7 @@ class Dispatcher:
 
         self.ParseError = getattr(self.ast, "ParseError", None)
 
-    def __call__(self, name, index, node, *args, **kwargs):
+    def __call__(self, name, node, *args, **kwargs):
         if name in self.nodes:
             ast_cls = self.nodes[name]
             strict_selector = True
@@ -65,7 +65,7 @@ class Dispatcher:
         )
         selector.visit(node, head=True)
 
-        return selector.out[index]
+        return selector.out
 
     def parse(self, code):
         try:
