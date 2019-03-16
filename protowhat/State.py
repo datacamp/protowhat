@@ -2,13 +2,15 @@ from copy import copy
 import inspect
 from jinja2 import Template
 
-from protowhat.Feedback import Feedback
+from protowhat.Feedback import Feedback, InstructorError
 from protowhat.Test import Fail, Test
 
 
 class DummyParser:
     def __init__(self):
-        self.ParseError = Exception
+        class ParseError(Exception):
+            pass
+        self.ParseError = ParseError
 
     def parse(self, *args, **kwargs):
         return self.ParseError()
@@ -46,14 +48,25 @@ class State:
         self.messages = []
 
         # Parse solution and student code
-        # solution code raises an exception if can't be parsed
-        if self.ast_dispatcher:
-            if isinstance(self.solution_code, str) and self.solution_ast is None:
-                self.solution_ast = self.ast_dispatcher.parse(self.solution_code)
-            if isinstance(self.student_code, str) and self.student_ast is None:
-                self.student_ast = self.ast_dispatcher.parse(self.student_code)
+        if isinstance(self.solution_code, str) and self.solution_ast is None:
+            self.solution_ast = self.parse(self.solution_code, test=False)
+        if isinstance(self.student_code, str) and self.student_ast is None:
+            self.student_ast = self.parse(self.student_code)
 
         self._child_params = inspect.signature(State.__init__).parameters
+
+    def parse(self, text, test=True):
+        result = None
+        if self.ast_dispatcher:
+            try:
+                result = self.ast_dispatcher.parse(text)
+            except self.ast_dispatcher.ParseError as e:
+                if test:
+                    raise e  # todo: self.do_test(Fail(Feedback(e.message)))
+                else:
+                    raise InstructorError("Something went wrong when parsing PEC or solution code: %s" % str(e))
+
+        return result
 
     def get_dispatcher(self):
         return DummyParser()

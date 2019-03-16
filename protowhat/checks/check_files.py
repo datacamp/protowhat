@@ -2,6 +2,7 @@ from pathlib import Path
 from collections.abc import Mapping
 
 from protowhat.Feedback import Feedback
+from protowhat.Test import Fail
 
 
 def check_file(
@@ -39,12 +40,12 @@ def check_file(
             raise Exception("Solution code does not have file named: %s" % fname)
         sol_kwargs["solution_code"] = sol_code
         sol_kwargs["solution_ast"] = (
-            state.ast_dispatcher.parse(sol_code) if parse else None
+            state.parse(sol_code, test=False) if parse else None
         )
 
     return state.to_child(
         student_code=code,
-        student_ast=state.ast_dispatcher.parse(code) if parse else None,
+        student_ast=state.parse(code) if parse else None,
         fname=fname,
         **sol_kwargs
     )
@@ -63,6 +64,6 @@ def _get_fname(state, attr, fname):
 def has_dir(state, fname, incorrect_msg="Did you create a directory named `{}`?"):
     """Test whether a directory exists."""
     if not Path(fname).is_dir():
-        state.report(Feedback(incorrect_msg.format(fname)))
+        state.do_test(Fail(Feedback(incorrect_msg.format(fname))))
 
     return state
