@@ -69,7 +69,7 @@ def check_node(
             new_state = Ex().check_node('SelectStmt', 0)
 
     """
-    df = partial(state.ast_dispatcher, name, slice(None), priority=priority)
+    df = partial(state.ast_dispatcher, name, priority=priority)
 
     sol_stmt_list = df(state.solution_ast)
     try:
