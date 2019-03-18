@@ -50,7 +50,7 @@ class Dispatcher:
         self.ast = ast
         self.safe_parsing = safe_parsing
 
-        self.ParseError = getattr(self.ast, "ParseError", None)
+        self.ParseError = getattr(self.ast, "ParseError", type("ParseError", (Exception,), {}))
 
     def __call__(self, name, node, *args, **kwargs):
         if name in self.nodes:
