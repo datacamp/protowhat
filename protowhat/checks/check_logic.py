@@ -166,3 +166,22 @@ def iter_tests(tests):
 
         for test in arg:
             yield test
+
+
+def disable_highlighting(state):
+    """Disable highlighting in the remainder of the SCT chain.
+
+    Include this function if you want to avoid that pythonwhat marks which part of the student submission is incorrect.
+    """
+    return state.to_child(highlighting_disabled=True)
+
+
+def fail(state, msg=""):
+    """Fail SCT
+
+    This function takes a single argument, ``msg``, that is the feedback given to the student.
+    Note that this would be a terrible idea for grading submissions, but may be useful while writing SCTs.
+    For example, failing a test will highlight the code as if the previous test/check had failed.
+    """
+    _msg = state.build_message(msg)
+    state.do_test(Fail(Feedback(_msg, state)))

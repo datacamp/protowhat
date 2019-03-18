@@ -31,6 +31,7 @@ class State:
         solution_result,
         reporter,
         force_diagnose=False,
+        highlighting_disabled=False,
         solution_ast=None,
         student_ast=None,
         fname=None,
