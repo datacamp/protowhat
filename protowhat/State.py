@@ -10,6 +10,7 @@ class DummyParser:
     def __init__(self):
         class ParseError(Exception):
             pass
+
         self.ParseError = ParseError
 
     def parse(self, *args, **kwargs):
@@ -65,7 +66,10 @@ class State:
                 if test:
                     raise e  # todo: self.do_test(Fail(Feedback(e.message)))
                 else:
-                    raise InstructorError("Something went wrong when parsing PEC or solution code: %s" % str(e))
+                    raise InstructorError(
+                        "Something went wrong when parsing PEC or solution code: %s"
+                        % str(e)
+                    )
 
         return result
 
@@ -127,19 +131,32 @@ class State:
 
         return child
 
-    def build_message(self, tail_msg="", fmt_kwargs=None):
-
+    def build_message(self, tail_msg="", fmt_kwargs=None, append=True):
         if not fmt_kwargs:
             fmt_kwargs = {}
         out_list = []
         # add trailing message to msg list
         msgs = self.messages[:] + [{"msg": tail_msg, "kwargs": fmt_kwargs}]
 
-        for d in msgs:
+        # format messages in list, by iterating over previous, current, and next message
+        for prev_d, d, next_d in zip([{}, *msgs[:-1]], msgs, [*msgs[1:], {}]):
+            tmp_kwargs = {
+                "parent": prev_d.get("kwargs"),
+                "child": next_d.get("kwargs"),
+                "this": d["kwargs"],
+                **d["kwargs"],
+            }
             # don't bother appending if there is no message
             if not d or not d["msg"]:
                 continue
-            out = Template(d["msg"]).render(**d["kwargs"])
+            out = Template(d["msg"].replace("__JINJA__:", "")).render(tmp_kwargs)
             out_list.append(out)
 
-        return "".join(out_list)
+        # if highlighting info is available, don't put all expand messages
+        if getattr(self, "highlight", None) and not self.highlighting_disabled:
+            out_list = out_list[-3:]
+
+        if append:
+            return "".join(out_list)
+        else:
+            return out_list[-1]
