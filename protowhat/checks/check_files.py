@@ -64,6 +64,6 @@ def _get_fname(state, attr, fname):
 def has_dir(state, fname, incorrect_msg="Did you create a directory named `{}`?"):
     """Test whether a directory exists."""
     if not Path(fname).is_dir():
-        state.do_test(Fail(Feedback(incorrect_msg.format(fname))))
+        state.report(Feedback(incorrect_msg.format(fname)))
 
     return state

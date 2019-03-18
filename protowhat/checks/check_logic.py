@@ -5,7 +5,7 @@ from functools import partial
 
 def fail(state, incorrect_msg="fail"):
     """Always fails the SCT, with an optional msg."""
-    state.do_test(Fail(Feedback(incorrect_msg)))
+    state.report(Feedback(incorrect_msg))
 
     return state
 
@@ -72,7 +72,7 @@ def check_not(state, *tests, msg):
         except TestFail:
             # it fails, as expected, off to next one
             continue
-        return state.do_test(Fail(Feedback(msg)))
+        return state.report(Feedback(msg))
 
     # return original state, so can be chained
     return state
@@ -115,7 +115,7 @@ def check_or(state, *tests):
         if success:
             return state  # todo: add test
 
-    state.do_test(Fail(first_feedback))
+    state.report(first_feedback)
 
 
 def check_correct(state, check, diagnose):
@@ -150,7 +150,7 @@ def check_correct(state, check, diagnose):
             feedback = e.feedback
 
     if feedback is not None:
-        state.do_test(Fail(feedback))
+        state.report(feedback)
 
     return state  # todo: add test
 
@@ -184,4 +184,4 @@ def fail(state, msg=""):
     For example, failing a test will highlight the code as if the previous test/check had failed.
     """
     _msg = state.build_message(msg)
-    state.do_test(Fail(Feedback(_msg, state)))
+    state.report(Feedback(_msg, state))
