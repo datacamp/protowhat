@@ -64,7 +64,7 @@ class State:
                 result = self.ast_dispatcher.parse(text)
             except self.ast_dispatcher.ParseError as e:
                 if test:
-                    raise e  # todo: self.do_test(Fail(Feedback(e.message)))
+                    raise e  # todo: self.report(Feedback(e.message))
                 else:
                     raise InstructorError(
                         "Something went wrong when parsing PEC or solution code: %s"
@@ -104,8 +104,7 @@ class State:
             return self.ast_dispatcher.describe(self.student_ast, "{node_name}")
 
     def report(self, feedback: Feedback):
-        # TODO
-        if feedback.highlight is None:
+        if feedback.highlight is None and self is not getattr(self, "root_state", None):
             feedback.highlight = self.student_ast
         test = Fail(feedback)
 
