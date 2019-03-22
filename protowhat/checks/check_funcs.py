@@ -21,6 +21,7 @@ def requires_ast(f):
             )
 
         # check whether the parser passed or failed for some code
+        # if safe_parsing is enabled in the Dispatcher (otherwise an exception would be raised earlier)
         ParseError = state.ast_dispatcher.ParseError
 
         parse_fail = any(isinstance(ast, ParseError) for ast in state_ast)
@@ -285,7 +286,7 @@ def has_equal_ast(
                 .has_equal_ast(sql = 'id > 1')
 
     """
-    ast = state.ast_dispatcher.ast
+    ast = state.ast_dispatcher.ast_mod
     sol_ast = state.solution_ast if sql is None else ast.parse(sql, start)
 
     # if sql is set, exact defaults to False.

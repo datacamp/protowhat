@@ -55,8 +55,7 @@ class Test:
         """
         Perform the actual test. For the standard test, result will be set to False.
         """
-        # TODO raise NotImplementedError (use Fail)
-        self.result = False
+        raise NotImplementedError
 
     def get_feedback(self):
         return self.feedback

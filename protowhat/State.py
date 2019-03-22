@@ -2,18 +2,22 @@ from copy import copy
 import inspect
 from jinja2 import Template
 
+from protowhat.selectors import DispatcherInterface
 from protowhat.Feedback import Feedback, InstructorError
 from protowhat.Test import Fail, Test
 
 
-class DummyParser:
+class DummyDispatcher(DispatcherInterface):
     def __init__(self):
         class ParseError(Exception):
             pass
 
         self.ParseError = ParseError
 
-    def parse(self, *args, **kwargs):
+    def __call__(self, name, node, *args, **kwargs):
+        return []
+
+    def parse(self, code):
         return self.ParseError()
 
     def describe(self, *args, **kwargs):
@@ -64,7 +68,7 @@ class State:
                 result = self.ast_dispatcher.parse(text)
             except self.ast_dispatcher.ParseError as e:
                 if test:
-                    raise e  # todo: self.report(Feedback(e.message))
+                    self.report(Feedback(e.message))
                 else:
                     raise InstructorError(
                         "Something went wrong when parsing PEC or solution code: %s"
@@ -74,7 +78,7 @@ class State:
         return result
 
     def get_dispatcher(self):
-        return DummyParser()
+        return DummyDispatcher()
 
     def get_ast_path(self):
         rev_checks = filter(
@@ -126,6 +130,8 @@ class State:
         child.parent = self
 
         # append messages
+        if not isinstance(append_message, dict):
+            append_message = {"msg": append_message, "kwargs": {}}
         child.messages = [*self.messages, append_message]
 
         return child

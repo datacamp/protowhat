@@ -3,13 +3,6 @@ from protowhat.Test import TestFail, Fail
 from functools import partial
 
 
-def fail(state, incorrect_msg="fail"):
-    """Always fails the SCT, with an optional msg."""
-    state.report(Feedback(incorrect_msg))
-
-    return state
-
-
 def multi(state, *tests):
     """Run multiple subtests. Return original state (for chaining).
 
@@ -176,8 +169,8 @@ def disable_highlighting(state):
     return state.to_child(highlighting_disabled=True)
 
 
-def fail(state, msg=""):
-    """Fail SCT
+def fail(state, msg="fail"):
+    """Always fails the SCT, with an optional msg.
 
     This function takes a single argument, ``msg``, that is the feedback given to the student.
     Note that this would be a terrible idea for grading submissions, but may be useful while writing SCTs.
@@ -185,3 +178,5 @@ def fail(state, msg=""):
     """
     _msg = state.build_message(msg)
     state.report(Feedback(_msg, state))
+
+    return state

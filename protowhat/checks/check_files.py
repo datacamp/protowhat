@@ -2,7 +2,6 @@ from pathlib import Path
 from collections.abc import Mapping
 
 from protowhat.Feedback import Feedback
-from protowhat.Test import Fail
 
 
 def check_file(
