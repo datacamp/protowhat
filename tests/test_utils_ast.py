@@ -3,7 +3,8 @@ import bashlex.errors
 from protowhat import utils_ast
 from collections import OrderedDict
 
-def dump_bash(obj, parent_cls = bashlex.ast.node, v = False):
+
+def dump_bash(obj, parent_cls=bashlex.ast.node, v=False):
     """Takes a bashlex AST and returns it structured as a dictionary.
 
     Each dictionary entry has two fields:
@@ -12,22 +13,28 @@ def dump_bash(obj, parent_cls = bashlex.ast.node, v = False):
     
     """
     # pull element out of single entry lists
-    if isinstance(obj, (list, tuple)) and len(obj) == 1: obj = obj[0]
+    if isinstance(obj, (list, tuple)) and len(obj) == 1:
+        obj = obj[0]
     # dump to dict
     if isinstance(obj, parent_cls):
-        if obj.kind in ['word', 'reservedword'] and not v:
+        if obj.kind in ["word", "reservedword"] and not v:
             return obj.word
         fields = OrderedDict()
-        for name in [el for el in obj.__dict__.keys() if el not in ('kind', 'pos')]:
+        for name in [el for el in obj.__dict__.keys() if el not in ("kind", "pos")]:
             attr = getattr(obj, name)
-            if   isinstance(attr, parent_cls): fields[name] = dump_bash(attr, parent_cls, v)
-            elif isinstance(attr, list) and len(attr) == 0: continue
-            elif isinstance(attr, list): fields[name] = [dump_bash(x, parent_cls, v) for x in attr]
-            else: fields[name] = attr
-        return {'type': obj.kind, 'data': fields}
+            if isinstance(attr, parent_cls):
+                fields[name] = dump_bash(attr, parent_cls, v)
+            elif isinstance(attr, list) and len(attr) == 0:
+                continue
+            elif isinstance(attr, list):
+                fields[name] = [dump_bash(x, parent_cls, v) for x in attr]
+            else:
+                fields[name] = attr
+        return {"type": obj.kind, "data": fields}
     elif isinstance(obj, list):
         return [dump_bash(x, parent_cls, v) for x in obj]
-    else: raise Exception("received non-node object?") 
+    else:
+        raise Exception("received non-node object?")
 
 
 def test_AstModule_load():
