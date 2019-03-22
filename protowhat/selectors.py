@@ -1,4 +1,5 @@
-from ast import NodeVisitor, AST
+from typing import TypeVar, Generic, Union, List, Dict
+from ast import NodeVisitor
 import inspect
 import importlib
 
@@ -21,6 +22,7 @@ class Selector(NodeVisitor):
             return super().visit(node)
 
     def visit_list(self, lst):
+        # this allows the root to be a list
         for item in lst:
             self.visit(item)
 
@@ -42,15 +44,28 @@ class Selector(NodeVisitor):
         return self.priority > node._priority
 
 
-class Dispatcher:
-    def __init__(self, node_cls, nodes=None, ast=None, safe_parsing=True):
+T = TypeVar("T")
+
+
+class DispatcherInterface(Generic[T]):
+    def __call__(self, name: str, node: T, *args, **kwargs):
+        raise NotImplementedError
+
+    def parse(self, code: str) -> Union[List[T], Dict[str, T]]:
+        raise NotImplementedError
+
+
+class Dispatcher(DispatcherInterface):
+    def __init__(self, node_cls, nodes=None, ast_mod=None, safe_parsing=True):
         """Wrapper to instantiate and use a Selector using node names."""
         self.node_cls = node_cls
-        self.nodes = nodes or []
-        self.ast = ast
+        self.nodes = nodes or {}
+        self.ast_mod = ast_mod
         self.safe_parsing = safe_parsing
 
-        self.ParseError = getattr(self.ast, "ParseError", type("ParseError", (Exception,), {}))
+        self.ParseError = getattr(
+            self.ast_mod, "ParseError", type("ParseError", (Exception,), {})
+        )
 
     def __call__(self, name, node, *args, **kwargs):
         if name in self.nodes:
@@ -69,7 +84,7 @@ class Dispatcher:
 
     def parse(self, code):
         try:
-            return self.ast.parse(code, strict=True)
+            return self.ast_mod.parse(code, strict=True)
         except self.ParseError as e:
             if self.safe_parsing:
                 return e
@@ -77,7 +92,7 @@ class Dispatcher:
                 raise e
 
     def describe(self, node, msg, field="", **kwargs):
-        speaker = getattr(self.ast, "speaker", None)
+        speaker = getattr(self.ast_mod, "speaker", None)
 
         if kwargs.get("index") is not None:
             phrase = "{} entry in the " if field else "{} "
@@ -86,19 +101,21 @@ class Dispatcher:
             kwargs["index"] = ""
 
         if speaker:
-            return self.ast.speaker.describe(node, field=field, fmt=msg, **kwargs)
+            return self.ast_mod.speaker.describe(node, field=field, fmt=msg, **kwargs)
 
     @classmethod
     def from_module(cls, mod):
         if isinstance(mod, str):
             mod = importlib.import_module(mod)
 
-        ast_nodes = {
-            k: v
-            for k, v in vars(mod).items()
-            if (inspect.isclass(v) and issubclass(v, mod.AstNode))
-        }
-        dispatcher = cls(mod.AstNode, nodes=ast_nodes, ast=mod)
+        ast_nodes = getattr(mod, "nodes", None)
+        if ast_nodes is None:
+            ast_nodes = {
+                k: v
+                for k, v in vars(mod).items()
+                if (inspect.isclass(v) and issubclass(v, mod.AstNode))
+            }
+        dispatcher = cls(mod.AstNode, nodes=ast_nodes, ast_mod=mod)
         return dispatcher
 
 

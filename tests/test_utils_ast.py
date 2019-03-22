@@ -32,8 +32,16 @@ def dump_bash(obj, parent_cls = bashlex.ast.node, v = False):
 
 def test_AstModule_load():
     cmd = """for ii in {1..10}; do echo $ii; done"""
-    ast_mod = utils_ast.AstModule(bashlex.parse, bashlex.errors.ParsingError)
-    data_dict = dump_bash(ast_mod.parse(cmd))
-    tree = ast_mod.load(data_dict)
 
-    assert type(tree.list[0]) == ast_mod.classes['for']
+    class Bashlex(utils_ast.AstModule):
+        ParseError = bashlex.errors.ParsingError
+
+        def parse(self, code, **kwargs):
+            # dump parse tree and
+            # use it to dynamically update this AstModule
+            return self.load(dump_bash(bashlex.parse(code)))
+
+    parser = Bashlex()
+    tree = parser.parse(cmd)
+
+    assert type(tree.list[0]) == parser.nodes["for"]
