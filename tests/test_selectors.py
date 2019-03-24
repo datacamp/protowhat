@@ -4,8 +4,10 @@ from protowhat.selectors import Selector
 def test_selector_standalone():
     # use python's builtin ast library
     from ast import Expr, Num
-    Expr._priority = 0; Num._priority = 1
-    node = Expr(value = Num(n = 1))
+
+    Expr._priority = 0
+    Num._priority = 1
+    node = Expr(value=Num(n=1))
 
     sel = Selector(Num)
     sel.visit(node)
