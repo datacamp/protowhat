@@ -79,14 +79,16 @@ class F(Chain):
         self._attr_scts = {} if attr_scts is None else attr_scts
 
     def __call__(self, *args, **kwargs):
-        if not self._crnt_sct:
+        if self._crnt_sct:
+            # calling an SCT function (after attribute access)
+            call_data = (self._crnt_sct, args, kwargs)
+            return self.__class__(self._stack + [call_data], self._attr_scts)
+        else:
+            # running the chain
             state = kwargs.get("state") or args[0]
             return reduce(
                 lambda s, cd: self._call_from_data(s, *cd), self._stack, state
             )
-        else:
-            call_data = (self._crnt_sct, args, kwargs)
-            return self.__class__(self._stack + [call_data], self._attr_scts)
 
     @staticmethod
     def _call_from_data(state, f, args, kwargs):
@@ -145,9 +147,11 @@ def create_sct_context(State, sct_dict, root_state=None):
     state_dec = state_dec_gen(State, sct_dict)
     sct_ctx = {k: state_dec(v) for k, v in sct_dict.items()}
 
-    ctx = {**sct_ctx}
-    ctx["state_dec"] = state_dec  # needed by ext packages
-    ctx["Ex"] = ExGen(root_state, sct_ctx)
-    ctx["F"] = partial(F, attr_scts=sct_ctx)
+    ctx = {
+        **sct_ctx,
+        "state_dec": state_dec,  # needed by ext packages
+        "Ex": ExGen(root_state, sct_ctx),
+        "F": partial(F, attr_scts=sct_ctx),
+    }
 
     return ctx

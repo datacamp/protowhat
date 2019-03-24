@@ -68,7 +68,7 @@ def test_check_file_use_fs_no_parse(state, tf):
 
 def test_check_no_sol(state, tf):
     child = cf.check_file(state, tf.name, use_fs = True)
-    assert child.solution_code == None
+    assert child.solution_code is None
 
 def test_check_dir(state):
     with TemporaryDirectory() as td:
