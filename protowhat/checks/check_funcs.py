@@ -1,5 +1,4 @@
 from functools import partial, wraps
-import copy
 
 from protowhat.Feedback import Feedback
 

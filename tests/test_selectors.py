@@ -1,7 +1,5 @@
 from protowhat.selectors import Selector
 
-import pytest
-
 
 def test_selector_standalone():
     # use python's builtin ast library
