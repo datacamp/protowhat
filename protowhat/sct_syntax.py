@@ -33,7 +33,10 @@ class Chain:
         )
 
     def __getattr__(self, attr):
-        attr_scts = self.__getattribute__("_attr_scts")
+        # Enable fast attribute access
+        if attr == "_attr_scts":
+            raise AttributeError("Prevent getattr recursion on copy")
+        attr_scts = self._attr_scts
         if attr not in attr_scts:
             raise AttributeError("No SCT named %s" % attr)
         elif self._waiting_on_call:
