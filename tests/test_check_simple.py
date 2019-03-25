@@ -1,5 +1,4 @@
 from protowhat.checks.check_simple import has_chosen, success_msg
-from protowhat.checks.check_logic import fail
 from protowhat.sct_syntax import Chain
 from protowhat.State import State
 from protowhat.Reporter import Reporter

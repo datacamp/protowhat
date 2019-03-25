@@ -7,7 +7,7 @@ def has_chosen(state, correct, msgs):
     Args:
         state:    State instance describing student and solution code. Can be omitted if used with Ex().
         correct:  index of correct option, where 1 is the first option.
-        msg  :    list of feedback messages corresponding to each option.
+        msgs  :    list of feedback messages corresponding to each option.
 
     :Example:
         The following SCT is for a multiple choice exercise with 2 options, the first

@@ -1,5 +1,5 @@
 from protowhat.Feedback import Feedback
-from protowhat.Test import TestFail, Fail
+from protowhat.Test import TestFail
 from functools import partial
 
 from protowhat.utils import legacy_signature
