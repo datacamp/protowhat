@@ -2,6 +2,18 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.6.0
+
+This release enables protowhat to be the base for pythonwhat.
+
+- `do_test` now runs a `Test` as in pythonwhat, instead of accepting a feedback string.
+- the explicit Fail subclass should be used instead of relying on the old default implementation of `Test`
+- the `report(feedback: Feedback)` method on the `State` class reintroduces a short way to gather exercise feedback,
+  equivalent to `do_test(Fail(Feedback(msg)))`, while also setting highlight info.
+- the `legacy_signature` decorator enables to call a function using old argument names
+  when they are passed as keyword arguments
+- AST utils to dump and load a tree structure to be used in e.g. dispatching are improved
+
 ## 1.5.0
 
 - Update parsing class interface for compatibility with antlr-ast
