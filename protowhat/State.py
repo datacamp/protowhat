@@ -154,6 +154,7 @@ class State:
             # don't bother appending if there is no message
             if not d or not d["msg"]:
                 continue
+            # TODO: rendering is slow in tests (40% of test time)
             out = Template(d["msg"].replace("__JINJA__:", "")).render(tmp_kwargs)
             out_list.append(out)
 
