@@ -40,20 +40,20 @@ class Test:
 
         self.result = None
 
-    def test(self):
+    def __call__(self):
         """
         Wrapper around specific tests. Tests only get one chance.
         """
         if self.result is None:
             try:
-                self.specific_test()
+                self.test()
                 self.result = np.array(self.result).all()
             except:
                 self.result = False
 
-    def specific_test(self):
+    def test(self):
         """
-        Perform the actual test. For the standard test, result will be set to False.
+        Perform the actual test.
         """
         raise NotImplementedError
 
@@ -62,5 +62,5 @@ class Test:
 
 
 class Fail(Test):
-    def specific_test(self):
+    def test(self):
         self.result = False
