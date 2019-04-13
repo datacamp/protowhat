@@ -13,6 +13,7 @@ class Reporter:
     This class holds the feedback- or success message and tracks whether there are failed tests
     or not. All tests are executed trough do_test() in the Reporter.
     """
+
     def __init__(self, errors=None):
         self.errors = errors
         self.errors_allowed = False
@@ -24,23 +25,21 @@ class Reporter:
     def allow_errors(self):
         self.errors_allowed = True
 
-    def do_test(self, test):
+    def do_test(self, test, fail_hard=True):
         """Raise failing test.
 
         Raise a ``TestFail`` object, containing the feedback message and highlight information.
         """
+        result = None
+        feedback = None
+        test()
         if isinstance(test, Test):
-            test.test()
             result = test.result
-            if not result:
+            if not result and fail_hard:
                 feedback = test.get_feedback()
                 raise TestFail(feedback, self.build_failed_payload(feedback))
 
-        else:
-            result = None
-            test()  # run function for side effects
-
-        return result
+        return result, feedback
 
     def build_failed_payload(self, feedback):
         return {
