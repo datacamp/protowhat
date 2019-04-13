@@ -5,11 +5,11 @@ import importlib
 
 
 class Selector(NodeVisitor):
-    def __init__(self, src, src_name=None, strict=True, priority=None):
-        self.src = src
-        self.src_name = src_name
+    def __init__(self, target_cls, target_cls_name=None, strict=True, priority=None):
+        self.target_cls = target_cls
+        self.target_cls_name = target_cls_name
         self.strict = strict
-        self.priority = src._priority if priority is None else priority
+        self.priority = target_cls._priority if priority is None else priority
         self.out = []
 
     def visit(self, node, head=False):
@@ -28,13 +28,13 @@ class Selector(NodeVisitor):
 
     def is_match(self, node):
         if self.strict:
-            if type(node) is self.src:
+            if type(node) is self.target_cls:
                 return True
             else:
                 return False
         else:
-            if isinstance(node, self.src) and (
-                self.src_name is None or self.src_name == node.__class__.__name__
+            if isinstance(node, self.target_cls) and (
+                    self.target_cls_name is None or self.target_cls_name == node.__class__.__name__
             ):
                 return True
             else:
@@ -48,10 +48,14 @@ T = TypeVar("T")
 
 
 class DispatcherInterface(Generic[T]):
-    def __call__(self, name: str, node: T, *args, **kwargs):
+    def find(self, name: str, node: T, *args, **kwargs) -> Union[List[T], Dict[str, T]]:
+        # todo: document signature, strategy kwarg (depth/breadth first)
         raise NotImplementedError
 
-    def parse(self, code: str) -> Union[List[T], Dict[str, T]]:
+    def select(self, path: str, node: T) -> Union[T, List[T]]:
+        raise NotImplementedError
+
+    def parse(self, code: str):
         raise NotImplementedError
 
 
@@ -67,7 +71,7 @@ class Dispatcher(DispatcherInterface):
             self.ast_mod, "ParseError", type("ParseError", (Exception,), {})
         )
 
-    def __call__(self, name, node, *args, **kwargs):
+    def find(self, name, node, *args, **kwargs):
         if name in self.nodes:
             ast_cls = self.nodes[name]
             strict_selector = True
@@ -76,7 +80,7 @@ class Dispatcher(DispatcherInterface):
             strict_selector = False
 
         selector = Selector(
-            ast_cls, src_name=name, strict=strict_selector, *args, **kwargs
+            ast_cls, target_cls_name=name, strict=strict_selector, *args, **kwargs
         )
         selector.visit(node, head=True)
 
