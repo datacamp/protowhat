@@ -52,9 +52,6 @@ class DispatcherInterface(Generic[T]):
         # todo: document signature, strategy kwarg (depth/breadth first)
         raise NotImplementedError
 
-    def select(self, path: str, node: T) -> Union[T, List[T]]:
-        raise NotImplementedError
-
     def parse(self, code: str):
         raise NotImplementedError
 
