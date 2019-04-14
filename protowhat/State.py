@@ -37,11 +37,11 @@ class State:
         reporter,
         force_diagnose=False,
         highlighting_disabled=False,
+        creator=None,
         solution_ast=None,
         student_ast=None,
         fname=None,
         ast_dispatcher=None,
-        history=tuple(),
     ):
 
         for k, v in locals().items():
@@ -80,27 +80,41 @@ class State:
     def get_dispatcher(self):
         return DummyDispatcher()
 
+    @property
+    def parent_state(self):
+        if self.creator is not None:
+            return self.creator["args"]["state"]
+
+    def get_state_history(self):
+        history = [self]
+        while history[-1].parent_state is not None:
+            history.append(history[-1].parent_state)
+
+        return list(reversed(history))
+
     def get_ast_path(self):
         rev_checks = filter(
-            lambda x: x["type"] in ["check_edge", "check_node"], reversed(self.history)
+            lambda x: x.creator is not None
+            and x.creator["type"] in ["check_edge", "check_node"],
+            reversed(self.get_state_history()),
         )
         try:
             last = next(rev_checks)
-            if last["type"] == "check_node":
+            if last.creator["type"] == "check_node":
                 # final check was for a node
                 return self.ast_dispatcher.describe(
-                    last["node"],
-                    index=last["kwargs"]["index"],
+                    last.student_ast,
+                    index=last.creator["args"]["index"],
                     msg="{index}{node_name}",
                 )
             else:
                 node = next(rev_checks)
-                if node["type"] == "check_node":
+                if node.creator["type"] == "check_node":
                     # checked for node, then for target, so can give rich description
                     return self.ast_dispatcher.describe(
-                        node["node"],
-                        field=last["kwargs"]["name"],
-                        index=last["kwargs"]["index"],
+                        node.student_ast,
+                        field=last.creator["args"]["name"],
+                        index=last.creator["args"]["index"],
                         msg="{index}{field_name} of the {node_name}",
                     )
 
@@ -127,7 +141,6 @@ class State:
         child = copy(self)
         for k, v in kwargs.items():
             setattr(child, k, v)
-        child.parent = self
 
         # append messages
         if not isinstance(append_message, dict):

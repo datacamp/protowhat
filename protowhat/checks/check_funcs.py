@@ -90,14 +90,8 @@ def check_node(
             _msg = MSG_CHECK_FALLBACK
         state.report(Feedback(_msg))
 
-    action = {
-        "type": "check_node",
-        "kwargs": {"name": name, "index": index},
-        "node": stu_stmt,
-    }
-
     return state.to_child(
-        student_ast=stu_stmt, solution_ast=sol_stmt, history=state.history + (action,)
+        student_ast=stu_stmt, solution_ast=sol_stmt
     )
 
 
@@ -159,10 +153,8 @@ def check_edge(
     if stu_attr is None and sol_attr is not None:
         state.report(Feedback(_msg))
 
-    action = {"type": "check_edge", "kwargs": {"name": name, "index": index}}
-
     return state.to_child(
-        student_ast=stu_attr, solution_ast=sol_attr, history=state.history + (action,)
+        student_ast=stu_attr, solution_ast=sol_attr
     )
 
 
