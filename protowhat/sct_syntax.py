@@ -168,6 +168,15 @@ class ExGen:
 Ex = ExGen(None, {})
 
 
+def get_checks_dict(checks_module):
+    return {
+        k: v
+        for k, v in vars(checks_module).items()
+        if k not in builtins.__dict__
+        if not k.startswith("__")
+    }
+
+
 def create_sct_context(State, sct_dict, root_state=None):
     state_dec = state_dec_gen(State, sct_dict)
     sct_ctx = {k: state_dec(v) for k, v in sct_dict.items()}
