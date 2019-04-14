@@ -45,7 +45,7 @@ class Reporter:
         return {
             "correct": False,
             "message": Reporter.to_html(feedback.message),
-            **feedback.get_formatted_line_info(),
+            **feedback.get_highlight_info(),
         }
 
     def build_final_payload(self):
