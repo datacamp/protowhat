@@ -3,7 +3,7 @@ import inspect
 import asttokens
 
 class PythonAst:
-    def get_text(self, code):
+    def get_text(self, full_text=None):
         atok = asttokens.ASTTokens(code, tree = self)
         return atok.get_text(self)
 
