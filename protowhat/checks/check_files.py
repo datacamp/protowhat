@@ -45,7 +45,6 @@ def check_file(
     return state.to_child(
         student_code=code,
         student_ast=state.parse(code) if parse else None,
-        fname=fname,
         **sol_kwargs
     )
 

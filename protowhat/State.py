@@ -40,7 +40,6 @@ class State:
         creator=None,
         solution_ast=None,
         student_ast=None,
-        fname=None,
         ast_dispatcher=None,
     ):
 
