@@ -52,7 +52,7 @@ class AstNode(AST):
     _fields = ()
     _priority = 1
 
-    def get_text(self, text):
+    def get_text(self, full_text=None):
         raise NotImplementedError()
 
     def get_position(self):
