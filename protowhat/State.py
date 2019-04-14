@@ -37,6 +37,7 @@ class State:
         reporter,
         force_diagnose=False,
         highlighting_disabled=False,
+        messages=None,
         creator=None,
         solution_ast=None,
         student_ast=None,
@@ -47,10 +48,10 @@ class State:
             if k != "self":
                 setattr(self, k, v)
 
+        self.messages = messages if messages else []
+
         if ast_dispatcher is None:
             self.ast_dispatcher = self.get_dispatcher()
-
-        self.messages = []
 
         # Parse solution and student code
         if isinstance(self.solution_code, str) and self.solution_ast is None:
