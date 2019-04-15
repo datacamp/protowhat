@@ -34,7 +34,8 @@ class Selector(NodeVisitor):
                 return False
         else:
             if isinstance(node, self.target_cls) and (
-                    self.target_cls_name is None or self.target_cls_name == node.__class__.__name__
+                self.target_cls_name is None
+                or self.target_cls_name == node.__class__.__name__
             ):
                 return True
             else:
@@ -52,7 +53,9 @@ class DispatcherInterface(Generic[T]):
         # todo: document signature, strategy kwarg (depth/breadth first)
         raise NotImplementedError
 
-    def select(self, path: Union[str, List[Union[str, int]]], node: T) -> Union[T, List[T]]:
+    def select(
+        self, path: Union[str, List[Union[str, int]]], node: T
+    ) -> Union[T, List[T]]:
         raise NotImplementedError
 
     @staticmethod

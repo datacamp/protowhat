@@ -90,9 +90,7 @@ def check_node(
             _msg = MSG_CHECK_FALLBACK
         state.report(Feedback(_msg))
 
-    return state.to_child(
-        student_ast=stu_stmt, solution_ast=sol_stmt
-    )
+    return state.to_child(student_ast=stu_stmt, solution_ast=sol_stmt)
 
 
 @requires_ast
@@ -153,9 +151,7 @@ def check_edge(
     if stu_attr is None and sol_attr is not None:
         state.report(Feedback(_msg))
 
-    return state.to_child(
-        student_ast=stu_attr, solution_ast=sol_attr
-    )
+    return state.to_child(student_ast=stu_attr, solution_ast=sol_attr)
 
 
 import re

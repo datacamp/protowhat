@@ -87,5 +87,3 @@ class TestRunnerProxy(TestRunner):
     def do_test(self, test, fail_hard=False):
         self.tests.append(test)
         return self.runner.do_test(test, fail_hard=fail_hard)
-
-

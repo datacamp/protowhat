@@ -36,7 +36,7 @@ def multi(state, *tests):
     return state
 
 
-@legacy_signature(incorrect_msg='msg')
+@legacy_signature(incorrect_msg="msg")
 def check_not(state, *tests, msg):
     """Run multiple subtests that should fail. If all subtests fail, returns original state (for chaining)
 
