@@ -7,23 +7,9 @@ This file holds the reporter class.
 """
 
 
-class Reporter:
-    """Do reporting.
-
-    This class holds the feedback- or success message and tracks whether there are failed tests
-    or not. All tests are executed trough do_test() in the Reporter.
-    """
-
-    def __init__(self, errors=None):
-        self.errors = errors
-        self.errors_allowed = False
-        self.success_msg = "Great work!"
-
-    def get_errors(self):
-        return self.errors
-
-    def allow_errors(self):
-        self.errors_allowed = True
+class TestRunner:
+    def __init__(self):
+        self.tests = []
 
     def do_test(self, test, fail_hard=True):
         """Raise failing test.
@@ -34,12 +20,44 @@ class Reporter:
         feedback = None
         test()
         if isinstance(test, Test):
+            self.tests.append(test)
             result = test.result
             if not result and fail_hard:
                 feedback = test.get_feedback()
                 raise TestFail(feedback, self.build_failed_payload(feedback))
 
         return result, feedback
+
+    def do_tests(self, tests, **kwargs):
+        return [self.do_test(test, **kwargs) for test in tests]
+
+    @property
+    def failure_feedback(self):
+        return list(filter(lambda test: test.result is False, self.tests))
+
+    @property
+    def has_failed(self):
+        return len(self.failure_feedback) > 0
+
+
+class Reporter(TestRunner):
+    """Do reporting.
+
+    This class holds the feedback- or success message and tracks whether there are failed tests
+    or not. All tests are executed trough do_test() in the Reporter.
+    """
+
+    def __init__(self, errors=None):
+        super().__init__()
+        self.errors = errors
+        self.errors_allowed = False
+        self.success_msg = "Great work!"
+
+    def get_errors(self):
+        return self.errors
+
+    def allow_errors(self):
+        self.errors_allowed = True
 
     def build_failed_payload(self, feedback):
         return {
@@ -58,3 +76,16 @@ class Reporter:
     @staticmethod
     def to_html(msg):
         return re.sub("<p>(.*)</p>", "\\1", markdown2.markdown(msg)).strip()
+
+
+class TestRunnerProxy(TestRunner):
+    # Checks using this might be split into more atomic checks
+    def __init__(self, runner: TestRunner):
+        super().__init__()
+        self.runner = runner
+
+    def do_test(self, test, fail_hard=False):
+        self.tests.append(test)
+        return self.runner.do_test(test, fail_hard=fail_hard)
+
+
