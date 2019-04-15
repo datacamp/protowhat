@@ -17,6 +17,9 @@ class DummyDispatcher(DispatcherInterface):
     def find(self, name, node, *args, **kwargs):
         return []
 
+    def select(self, path: str, node):
+        return None
+
     def parse(self, code):
         return self.ParseError()
 
