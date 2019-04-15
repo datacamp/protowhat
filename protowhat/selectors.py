@@ -52,6 +52,22 @@ class DispatcherInterface(Generic[T]):
         # todo: document signature, strategy kwarg (depth/breadth first)
         raise NotImplementedError
 
+    def select(self, path: Union[str, List[Union[str, int]]], node: T) -> Union[T, List[T]]:
+        raise NotImplementedError
+
+    @staticmethod
+    def _path_str_to_list(path):
+        steps = path.split(".")
+
+        def parse_int(x):
+            try:
+                return int(x)
+            except ValueError:
+                return x
+
+        steps = map(parse_int, steps)
+        return list(steps)
+
     def parse(self, code: str):
         raise NotImplementedError
 
@@ -82,6 +98,19 @@ class Dispatcher(DispatcherInterface):
         selector.visit(node, head=True)
 
         return selector.out
+
+    def select(self, path, node):
+        result = node
+        if isinstance(path, str):
+            path = self._path_str_to_list(path)
+        for step in path:
+            if isinstance(step, str):
+                result = getattr(result, step, None)
+            elif isinstance(step, int):
+                result = result[step] if len(result) > step else None
+            if result is None:
+                break
+        return result
 
     def parse(self, code):
         try:
