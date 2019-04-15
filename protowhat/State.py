@@ -14,7 +14,7 @@ class DummyDispatcher(DispatcherInterface):
 
         self.ParseError = ParseError
 
-    def __call__(self, name, node, *args, **kwargs):
+    def find(self, name, node, *args, **kwargs):
         return []
 
     def parse(self, code):
