@@ -131,8 +131,11 @@ class State:
 
         return self.do_test(test)
 
-    def do_test(self, test: Test):
-        return self.reporter.do_test(test)
+    def do_test(self, test: Test, **kwargs):
+        return self.reporter.do_test(test, **kwargs)
+
+    def do_tests(self, tests, **kwargs):
+        return [self.do_test(test, **kwargs) for test in tests]
 
     def to_child(self, append_message="", **kwargs):
         """Basic implementation of returning a child state"""

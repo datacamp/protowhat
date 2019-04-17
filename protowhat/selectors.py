@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Union, List, Dict
+from typing import TypeVar, Generic, Union, List, Dict, Tuple
 from ast import NodeVisitor
 import inspect
 import importlib
@@ -54,7 +54,7 @@ class DispatcherInterface(Generic[T]):
         raise NotImplementedError
 
     def select(
-        self, path: Union[str, List[Union[str, int]]], node: T
+        self, path: Union[str, Tuple, List[Union[str, int]]], node: T
     ) -> Union[T, List[T]]:
         raise NotImplementedError
 

@@ -32,12 +32,12 @@ class TestRunner:
         return [self.do_test(test, **kwargs) for test in tests]
 
     @property
-    def failure_feedback(self):
-        return list(filter(lambda test: test.result is False, self.tests))
+    def failures(self):
+        return list(filter(lambda test: test.result == False, self.tests))
 
     @property
     def has_failed(self):
-        return len(self.failure_feedback) > 0
+        return len(self.failures) > 0
 
 
 class Reporter(TestRunner):
