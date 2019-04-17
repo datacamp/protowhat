@@ -49,7 +49,7 @@ class Chain:
             return self._sct_copy(attr_scts[attr])
 
     def __call__(self, *args, **kwargs):
-        self._state = run_check(self._crnt_sct, self._state, *args, **kwargs)
+        self._state = link_to_state(self._crnt_sct)(self._state, *args, **kwargs)
         self._waiting_on_call = False
         return self
 
@@ -75,23 +75,19 @@ class Chain:
         return chain
 
 
-def run_check(check, state, *args, **kwargs):
-    new_state = check(state, *args, **kwargs)
-    if new_state != state and hasattr(new_state, "creator"):
-        try:
-            ba = inspect.signature(check).bind(state, *args, **kwargs)
-            ba.apply_defaults()
-            new_state.creator = {"type": check.__name__, "args": ba.arguments}
-        except Exception as e:
-            raise e
+def link_to_state(check):
+    @wraps(check)
+    def wrapper(state, *args, **kwargs):
+        new_state = check(state, *args, **kwargs)
+        if new_state != state and hasattr(new_state, "creator") and not isinstance(check, F):
+            try:
+                ba = inspect.signature(check).bind(state, *args, **kwargs)
+                ba.apply_defaults()
+                new_state.creator = {"type": check.__name__, "args": ba.arguments}
+            except Exception as e:
+                raise e
 
-    return new_state
-
-
-def link_to_state(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        return run_check(f, *args, **kwargs)
+        return new_state
 
     return wrapper
 
@@ -117,7 +113,7 @@ class F(Chain):
 
     @staticmethod
     def _call_from_data(state, f, args, kwargs):
-        return run_check(f, state, *args, **kwargs)
+        return link_to_state(f)(state, *args, **kwargs)
 
     @classmethod
     def _from_func(cls, f, *args, _attr_scts=None, **kwargs):
