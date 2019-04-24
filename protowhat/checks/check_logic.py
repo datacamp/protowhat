@@ -142,7 +142,7 @@ def check_correct(state, check, diagnose):
     try:
         multi(state, diagnose)
     except TestFail as e:
-        if feedback is not None or state.force_diagnose:
+        if feedback is not None or getattr(state, "force_diagnose", False):
             feedback = e.feedback
 
     if feedback is not None:
