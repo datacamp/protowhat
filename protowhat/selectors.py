@@ -53,9 +53,7 @@ class DispatcherInterface(Generic[T]):
         # todo: document signature, strategy kwarg (depth/breadth first)
         raise NotImplementedError
 
-    def select(
-        self, path: Union[str, Tuple, List[Union[str, int]]], node: T
-    ) -> Union[T, List[T]]:
+    def select(self, path: Union[str, Tuple], node: T) -> Union[T, List[T]]:
         raise NotImplementedError
 
     @staticmethod
@@ -102,11 +100,15 @@ class Dispatcher(DispatcherInterface):
 
         return selector.out
 
-    def select(self, path, node):
+    def select(self, spec, node):
         result = node
-        if isinstance(path, str):
-            path = self._path_str_to_list(path)
-        for step in path:
+        if isinstance(spec, tuple):
+            raise ValueError(
+                "This dispatcher currently doesn't support tuple specs for select"
+            )
+        if isinstance(spec, str):
+            spec = self._path_str_to_list(spec)
+        for step in spec:
             if isinstance(step, str):
                 result = getattr(result, step, None)
             elif isinstance(step, int):
