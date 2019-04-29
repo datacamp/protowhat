@@ -4,14 +4,14 @@ import builtins
 from functools import wraps, reduce, partial
 
 
-def state_dec_gen(State, attr_scts):
+def state_dec_gen(state_cls, attr_scts):
     def state_dec(f):
         """Decorate check_* functions to return F chain if no state passed"""
 
         @wraps(f)
         def wrapper(*args, **kwargs):
             state = kwargs.get("state", args[0] if len(args) else None)
-            if isinstance(state, State):
+            if isinstance(state, state_cls):
                 return f(*args, **kwargs)
             else:
                 return F._from_func(f, *args, _attr_scts=attr_scts, **kwargs)
@@ -19,6 +19,20 @@ def state_dec_gen(State, attr_scts):
         return wrapper
 
     return state_dec
+
+
+def link_to_state(check):
+    @wraps(check)
+    def wrapper(state, *args, **kwargs):
+        new_state = check(state, *args, **kwargs)
+        if new_state != state and hasattr(new_state, "creator") and not isinstance(check, F):
+            ba = inspect.signature(check).bind(state, *args, **kwargs)
+            ba.apply_defaults()
+            new_state.creator = {"type": check.__name__, "args": ba.arguments}
+
+        return new_state
+
+    return wrapper
 
 
 class Chain:
@@ -75,29 +89,10 @@ class Chain:
         return chain
 
 
-def link_to_state(check):
-    @wraps(check)
-    def wrapper(state, *args, **kwargs):
-        new_state = check(state, *args, **kwargs)
-        if new_state != state and hasattr(new_state, "creator") and not isinstance(check, F):
-            try:
-                ba = inspect.signature(check).bind(state, *args, **kwargs)
-                ba.apply_defaults()
-                new_state.creator = {"type": check.__name__, "args": ba.arguments}
-            except Exception as e:
-                raise e
-
-        return new_state
-
-    return wrapper
-
-
 class F(Chain):
     def __init__(self, stack=None, attr_scts=None):
-        self._crnt_sct = None
+        super().__init__(None, attr_scts)
         self._stack = [] if stack is None else stack
-        self._waiting_on_call = False
-        self._attr_scts = {} if attr_scts is None else attr_scts
 
     def __call__(self, *args, **kwargs):
         if self._crnt_sct:
