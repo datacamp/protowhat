@@ -46,10 +46,11 @@ class Reporter(TestRunner):
     or not. All tests are executed trough do_test() in the Reporter.
     """
 
-    def __init__(self, errors=None):
+    def __init__(self, errors=None, highlight_offset=None):
         super().__init__()
         self.errors = errors
         self.errors_allowed = False
+        self.highlight_offset = highlight_offset or {}
         self.success_msg = "Great work!"
 
     def get_errors(self):
@@ -59,10 +60,15 @@ class Reporter(TestRunner):
         self.errors_allowed = True
 
     def build_failed_payload(self, feedback):
+        highlight = feedback.get_highlight_info()
+        for k in self.highlight_offset:
+            if k in highlight:
+                highlight[k] = highlight[k] + self.highlight_offset[k]
+
         return {
             "correct": False,
             "message": Reporter.to_html(feedback.message),
-            **feedback.get_highlight_info(),
+            **highlight,
         }
 
     def build_final_payload(self):
