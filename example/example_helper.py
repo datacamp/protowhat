@@ -5,7 +5,7 @@ import asttokens
 
 class PythonAst:
     def get_text(self, full_text=None):
-        atok = asttokens.ASTTokens(code, tree=self)
+        atok = asttokens.ASTTokens(full_text, tree=self)
         return atok.get_text(self)
 
 
