@@ -296,7 +296,8 @@ def has_equal_ast(
 
     sol_str = get_str(state.solution_ast, state.solution_code, sql)
     _msg = incorrect_msg.format(
-        ast_path=state.get_ast_path() or "highlighted code",
+        ast_path=state.get_ast_path()
+        or ("code" if state.highlighting_disabled else "highlighted code"),
         extra="The checker expected to find `{}` in there.".format(sol_str)
         if sol_str
         else "Something is missing.",
