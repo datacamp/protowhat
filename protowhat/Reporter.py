@@ -1,6 +1,6 @@
 import re
 import markdown2
-from protowhat.Test import TestFail, Test
+from protowhat.Test import Test
 
 """
 This file holds the reporter class.
@@ -11,7 +11,7 @@ class TestRunner:
     def __init__(self):
         self.tests = []
 
-    def do_test(self, test, fail_hard=True):
+    def do_test(self, test):
         """Raise failing test.
 
         Raise a ``TestFail`` object, containing the feedback message and highlight information.
@@ -22,18 +22,17 @@ class TestRunner:
         if isinstance(test, Test):
             self.tests.append(test)
             result = test.result
-            if not result and fail_hard:
+            if not result:
                 feedback = test.get_feedback()
-                raise TestFail(feedback, self.build_failed_payload(feedback))
 
         return result, feedback
 
-    def do_tests(self, tests, **kwargs):
-        return [self.do_test(test, **kwargs) for test in tests]
+    def do_tests(self, tests):
+        return [self.do_test(test) for test in tests]
 
     @property
     def failures(self):
-        return list(filter(lambda test: test.result == False, self.tests))
+        return list(filter(lambda test: test.result is False, self.tests))
 
     @property
     def has_failed(self):
@@ -84,6 +83,6 @@ class TestRunnerProxy(TestRunner):
         super().__init__()
         self.runner = runner
 
-    def do_test(self, test, fail_hard=False):
+    def do_test(self, test):
         self.tests.append(test)
-        return self.runner.do_test(test, fail_hard=fail_hard)
+        return self.runner.do_test(test)
