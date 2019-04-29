@@ -47,7 +47,7 @@ class Test:
         if self.result is None:
             try:
                 self.test()
-                self.result = np.array(self.result).all()
+                self.result = bool(np.array(self.result).all())
             except:
                 self.result = False
 
