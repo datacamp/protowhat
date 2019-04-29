@@ -4,7 +4,7 @@ from jinja2 import Template
 
 from protowhat.selectors import DispatcherInterface
 from protowhat.Feedback import Feedback, InstructorError
-from protowhat.Test import Fail, Test
+from protowhat.Test import Fail, Test, TestFail
 
 
 class DummyDispatcher(DispatcherInterface):
@@ -131,11 +131,14 @@ class State:
 
         return self.do_test(test)
 
-    def do_test(self, test: Test, **kwargs):
-        return self.reporter.do_test(test, **kwargs)
+    def do_test(self, test: Test):
+        result, feedback = self.reporter.do_test(test)
+        if result is False:
+            raise TestFail(feedback, self.reporter.build_failed_payload(feedback))
+        return result, feedback
 
-    def do_tests(self, tests, **kwargs):
-        return [self.do_test(test, **kwargs) for test in tests]
+    def do_tests(self, tests):
+        return [self.do_test(test) for test in tests]
 
     def to_child(self, append_message="", **kwargs):
         """Basic implementation of returning a child state"""
