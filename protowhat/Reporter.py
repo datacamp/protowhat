@@ -1,4 +1,6 @@
 import re
+from copy import copy
+
 import markdown2
 from protowhat.Test import Test
 
@@ -39,15 +41,26 @@ class TestRunner:
         return len(self.failures) > 0
 
 
-class Reporter(TestRunner):
+class TestRunnerProxy(TestRunner):
+    # Checks using this might be split into more atomic checks
+    def __init__(self, runner: TestRunner):
+        super().__init__()
+        self.runner = runner
+
+    def do_test(self, test):
+        self.tests.append(test)
+        return self.runner.do_test(test)
+
+
+class Reporter(TestRunnerProxy):
     """Do reporting.
 
     This class holds the feedback- or success message and tracks whether there are failed tests
     or not. All tests are executed trough do_test() in the Reporter.
     """
 
-    def __init__(self, errors=None, highlight_offset=None):
-        super().__init__()
+    def __init__(self, runner=None, errors=None, highlight_offset=None):
+        super().__init__(runner or TestRunner())
         self.errors = errors
         self.errors_allowed = False
         self.highlight_offset = highlight_offset or {}
@@ -60,10 +73,17 @@ class Reporter(TestRunner):
         self.errors_allowed = True
 
     def build_failed_payload(self, feedback):
-        highlight = feedback.get_highlight_info()
-        for k in self.highlight_offset:
+        highlight_offset = copy(self.highlight_offset)
+        if (
+            "line_start" in highlight_offset
+            and "line_end" not in highlight_offset
+        ):
+            highlight_offset["line_end"] = highlight_offset["line_start"]
+
+        highlight = copy(feedback.get_highlight_info())
+        for k in highlight_offset:
             if k in highlight:
-                highlight[k] = highlight[k] + self.highlight_offset[k]
+                highlight[k] = highlight[k] + highlight_offset[k]
 
         return {
             "correct": False,
@@ -81,14 +101,3 @@ class Reporter(TestRunner):
     @staticmethod
     def to_html(msg):
         return re.sub("<p>(.*)</p>", "\\1", markdown2.markdown(msg)).strip()
-
-
-class TestRunnerProxy(TestRunner):
-    # Checks using this might be split into more atomic checks
-    def __init__(self, runner: TestRunner):
-        super().__init__()
-        self.runner = runner
-
-    def do_test(self, test):
-        self.tests.append(test)
-        return self.runner.do_test(test)
