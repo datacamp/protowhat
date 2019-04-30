@@ -1,15 +1,19 @@
+import os
 import pytest
+from functools import partial
 from tempfile import NamedTemporaryFile, TemporaryDirectory
+
 from protowhat.selectors import Dispatcher
 from protowhat.State import State
 from protowhat.Reporter import Reporter
 import ast
 
+from protowhat.sct_syntax import F, Ex
 from protowhat.checks import check_files as cf
 from protowhat.checks.check_funcs import check_node
 
-# TODO: selectors require a _priority attribute and _get_field_names
-#       this is a holdover from the sql ast modules
+# TODO: selectors require a _priority attribute
+#  this is a holdover from the sql ast modules
 ast.Expr._priority = 0
 DUMMY_NODES = {"Expr": ast.Expr}
 
@@ -36,23 +40,9 @@ def tf():
 @pytest.fixture(scope="function")
 def state():
     return State(
+        # only Reporter and Dispatcher are used
         student_code="",
         solution_code="",
-        reporter=Reporter(),
-        # args below should be ignored
-        pre_exercise_code="NA",
-        student_result="",
-        solution_result="",
-        student_conn=None,
-        solution_conn=None,
-        ast_dispatcher=Dispatcher(ast.AST, DUMMY_NODES, ParseHey()),
-    )
-
-
-def test_initial_state():
-    State(
-        student_code={"script.py": "1"},
-        solution_code={"script.py": "1"},
         reporter=Reporter(),
         pre_exercise_code="",
         student_result="",
@@ -63,9 +53,8 @@ def test_initial_state():
     )
 
 
-def test_check_file_use_fs(state, tf):
-    state.solution_code = {tf.name: "3 + 3"}
-    child = cf.check_file(state, tf.name, use_solution=True)
+def test_check_file(state, tf):
+    child = cf.check_file(state, tf.name, solution_code="3 + 3")
     assert child.student_code == "1 + 1"
     assert_equal_ast(child.student_ast, ast.parse(child.student_code))
     assert child.solution_code == "3 + 3"
@@ -73,8 +62,7 @@ def test_check_file_use_fs(state, tf):
     assert check_node(child, "Expr", 0)
 
 
-def test_check_file_use_fs_no_parse(state, tf):
-    state.solution_code = {tf.name: "3 + 3"}
+def test_check_file_no_parse(state, tf):
     child = cf.check_file(state, tf.name, parse=False)
     assert child.student_code == "1 + 1"
     assert child.student_ast is None
@@ -84,7 +72,7 @@ def test_check_file_use_fs_no_parse(state, tf):
 
 
 def test_check_no_sol(state, tf):
-    child = cf.check_file(state, tf.name, use_fs=True)
+    child = cf.check_file(state, tf.name)
     assert child.solution_code is None
 
 
@@ -93,33 +81,20 @@ def test_check_dir(state):
         cf.has_dir(state, td)
 
 
-@pytest.fixture(scope="function")
-def code_state():
-    return State(
-        student_code={"script1.py": "1 + 1", "script2.py": "2 + 2"},
-        solution_code={"script1.py": "3 + 3", "script2.py": "4 + 4"},
-        reporter=Reporter(),
-        # args below should be ignored
-        pre_exercise_code="NA",
-        student_result="",
-        solution_result="",
-        student_conn=None,
-        solution_conn=None,
-        ast_dispatcher=Dispatcher(ast.AST, DUMMY_NODES, ParseHey()),
-    )
+def test_check_file_fchain(state, tf):
+    f = F(attr_scts={"check_file": cf.check_file})
+    Ex(state) >> f.check_file(tf.name)
 
 
-def test_check_file(code_state):
-    child = cf.check_file(code_state, "script1.py", use_fs=False, use_solution=True)
-    assert child.student_code == "1 + 1"
-    assert_equal_ast(child.student_ast, ast.parse(child.student_code))
-    assert_equal_ast(child.solution_ast, ast.parse(child.solution_code))
+def test_load_file(state, tf):
+    assert "1 + 1" == cf.load_file(tf.name)
 
+    filename = os.path.basename(os.path.normpath(tf.name))
+    common_path = os.path.dirname(tf.name) + "/"
 
-def test_check_file_no_parse(code_state):
-    child = cf.check_file(
-        code_state, "script1.py", use_fs=False, parse=False, use_solution=True
-    )
-    assert child.student_code == "1 + 1"
-    assert child.student_ast is None
-    assert child.solution_ast is None
+    load_file = partial(cf.load_file, prefix=common_path)
+    assert "1 + 1" == load_file(filename)
+
+    assert "1 + 1" == cf.load_file(filename, prefix=common_path)
+
+    assert "1 + 1" == cf.load_file(filename, prefix=os.path.dirname(tf.name))
