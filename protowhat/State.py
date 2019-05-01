@@ -88,7 +88,8 @@ class State:
         if self.creator is not None:
             return self.creator["args"]["state"]
 
-    def get_state_history(self):
+    @property
+    def state_history(self):
         history = [self]
         while history[-1].parent_state is not None:
             history.append(history[-1].parent_state)
@@ -99,7 +100,7 @@ class State:
         rev_checks = filter(
             lambda x: x.creator is not None
             and x.creator["type"] in ["check_edge", "check_node"],
-            reversed(self.get_state_history()),
+            reversed(self.state_history),
         )
         try:
             last = next(rev_checks)
