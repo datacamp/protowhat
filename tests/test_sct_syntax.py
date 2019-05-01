@@ -1,9 +1,36 @@
-from protowhat.State import State
-from protowhat.sct_syntax import ExGen, F, state_dec_gen
 import pytest
 
+from protowhat.State import State
+from protowhat.Reporter import Reporter
+from protowhat.sct_syntax import (
+    ExGen,
+    Ex,
+    F,
+    state_dec_gen,
+    get_checks_dict,
+    create_sct_context,
+    Chain,
+)
+
 state_dec = state_dec_gen(State, {})
-Ex = ExGen(State, {})
+
+
+@pytest.fixture
+def state():
+    return State("student_code", "", "", None, None, {}, {}, Reporter())
+
+
+def noop(state):
+    return state
+
+
+def child_state(state):
+    return state.to_child()
+
+
+@pytest.fixture
+def test_checks():
+    return {"noop": noop, "child_state": child_state}
 
 
 @pytest.fixture
@@ -74,7 +101,7 @@ def test_ex_add_f(ex, f):
 
 
 def test_ex_add_unary(ex):
-    (ex >> (lambda state: state + "b"))._state == "statexb"
+    assert (ex >> (lambda state: state + "b"))._state == "statexb"
 
 
 def test_ex_add_ex_err(ex):
@@ -87,14 +114,37 @@ def test_f_add_ex_err(f, ex):
         f >> ex
 
 
-from protowhat.Reporter import Reporter
-
-
-def test_state_dec_instant_eval():
-    state = State("student_code", "", "", None, None, {}, {}, Reporter())
-
+def test_state_dec_instant_eval(state):
     @state_dec
     def stu_code(state, x="x"):
         return state.student_code + x
 
     assert stu_code(state) == "student_codex"
+
+
+def test_sct_dict_creation():
+    from protowhat import checks
+
+    sct_dict = get_checks_dict(checks)
+    assert isinstance(sct_dict, dict)
+    assert not sct_dict  # checks not exported in init
+
+    from protowhat.checks import check_simple
+
+    sct_dict = get_checks_dict(check_simple)
+
+    assert len(sct_dict) == 3  # Feedback is also callable
+    assert sct_dict["has_chosen"] == check_simple.has_chosen
+    assert sct_dict["success_msg"] == check_simple.success_msg
+
+
+def test_sct_context_creation(state, test_checks):
+    sct_ctx = create_sct_context(State, test_checks)
+
+    for check in ["noop", "child_state"]:
+        assert check in sct_ctx
+        assert callable(sct_ctx[check])
+
+    for chain in ["Ex", "F"]:
+        assert chain in sct_ctx
+        assert isinstance(sct_ctx[chain](state), Chain)
