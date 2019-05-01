@@ -1,7 +1,7 @@
 import pytest
 
+from tests.helper import state, dummy_checks
 from protowhat.State import State
-from protowhat.Reporter import Reporter
 from protowhat.sct_syntax import (
     ExGen,
     Ex,
@@ -12,25 +12,10 @@ from protowhat.sct_syntax import (
     Chain,
 )
 
+state = pytest.fixture(state)
+dummy_checks = pytest.fixture(dummy_checks)
+
 state_dec = state_dec_gen(State, {})
-
-
-@pytest.fixture
-def state():
-    return State("student_code", "", "", None, None, {}, {}, Reporter())
-
-
-def noop(state):
-    return state
-
-
-def child_state(state):
-    return state.to_child()
-
-
-@pytest.fixture
-def test_checks():
-    return {"noop": noop, "child_state": child_state}
 
 
 @pytest.fixture
@@ -138,8 +123,8 @@ def test_sct_dict_creation():
     assert sct_dict["success_msg"] == check_simple.success_msg
 
 
-def test_sct_context_creation(state, test_checks):
-    sct_ctx = create_sct_context(State, test_checks)
+def test_sct_context_creation(state, dummy_checks):
+    sct_ctx = create_sct_context(State, dummy_checks)
 
     for check in ["noop", "child_state"]:
         assert check in sct_ctx
@@ -158,15 +143,15 @@ def test_state_linking_root_creator(state):
     Ex(state) >> f.diagnose()
 
 
-def test_state_linking_root_creator_noop(state, test_checks):
+def test_state_linking_root_creator_noop(state, dummy_checks):
     def diagnose(end_state):
         assert end_state.creator is None
 
-    TestEx = ExGen(state, test_checks)
+    TestEx = ExGen(state, dummy_checks)
     TestEx().noop() >> F(attr_scts={"diagnose": diagnose}).diagnose()
 
 
-def test_state_linking_root_creator_child_state(state, test_checks):
+def test_state_linking_root_creator_child_state(state, dummy_checks):
     def diagnose(end_state):
         assert end_state != state
         assert end_state.parent_state is state
@@ -174,5 +159,5 @@ def test_state_linking_root_creator_child_state(state, test_checks):
         assert state == end_state.state_history[0]
         assert end_state == end_state.state_history[1]
 
-    TestEx = ExGen(state, test_checks)
+    TestEx = ExGen(state, dummy_checks)
     TestEx().child_state() >> F(attr_scts={"diagnose": diagnose}).diagnose()

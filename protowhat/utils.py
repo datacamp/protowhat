@@ -19,7 +19,7 @@ def _debug(state, msg=""):
         feedback += msg + "\n"
 
     if check_history:
-        feedback += "SCT function history: `{}`".format(" > ".join(check_history))
+        feedback += "SCT function zoom history: `{}`".format(" > ".join(check_history))
 
     if state.reporter.tests:
         feedback += "\nLast test: `{}`".format(repr(state.reporter.tests[-1]))
