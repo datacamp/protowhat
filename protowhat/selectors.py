@@ -155,7 +155,7 @@ class Dispatcher(DispatcherInterface):
 
 
 def get_ord(num):
-    assert num != 0, "use strictly positive numbers in get_ord()"
+    assert num > 0, "use strictly positive numbers in get_ord()"
     nums = {
         1: "first",
         2: "second",
@@ -171,4 +171,6 @@ def get_ord(num):
     if num in nums:
         return nums[num]
     else:
-        return "%dth" % num
+        return (
+            {1: "{}st", 2: "{}nd", 3: "{}rd"}.get(num if (num < 20) else (num % 10), "{}th")
+        ).format(num)
