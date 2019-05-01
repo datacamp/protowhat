@@ -3,12 +3,8 @@ from collections import Counter
 import pytest
 from protowhat.Feedback import Feedback
 from protowhat.Reporter import Reporter
-from protowhat.Test import Test as T, Fail
-
-
-class Success(T):
-    def test(self):
-        self.result = True
+from protowhat.Test import Fail
+from tests.helper import Success
 
 
 def test_test_runner_proxy():
