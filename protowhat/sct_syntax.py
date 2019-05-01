@@ -165,6 +165,7 @@ def get_checks_dict(checks_module):
         for k, v in vars(checks_module).items()
         if k not in builtins.__dict__
         if not k.startswith("__")
+        if callable(v)
     }
 
 
