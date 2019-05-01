@@ -10,7 +10,7 @@ def _debug(state, msg=""):
     """
     check_history = [
         s.creator["type"]
-        for s in state.get_state_history()
+        for s in state.state_history
         if getattr(s, "creator", None)
     ]
 

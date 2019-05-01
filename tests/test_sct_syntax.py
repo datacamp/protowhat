@@ -148,3 +148,31 @@ def test_sct_context_creation(state, test_checks):
     for chain in ["Ex", "F"]:
         assert chain in sct_ctx
         assert isinstance(sct_ctx[chain](state), Chain)
+
+
+def test_state_linking_root_creator(state):
+    def diagnose(end_state):
+        assert end_state.creator is None
+
+    f = F(attr_scts={"diagnose": diagnose})
+    Ex(state) >> f.diagnose()
+
+
+def test_state_linking_root_creator_noop(state, test_checks):
+    def diagnose(end_state):
+        assert end_state.creator is None
+
+    TestEx = ExGen(state, test_checks)
+    TestEx().noop() >> F(attr_scts={"diagnose": diagnose}).diagnose()
+
+
+def test_state_linking_root_creator_child_state(state, test_checks):
+    def diagnose(end_state):
+        assert end_state != state
+        assert end_state.parent_state is state
+        assert len(end_state.state_history) == 2
+        assert state == end_state.state_history[0]
+        assert end_state == end_state.state_history[1]
+
+    TestEx = ExGen(state, test_checks)
+    TestEx().child_state() >> F(attr_scts={"diagnose": diagnose}).diagnose()
