@@ -1,4 +1,6 @@
-from protowhat.selectors import Selector
+import pytest
+
+from protowhat.selectors import Selector, get_ord
 
 
 def test_selector_standalone():
@@ -20,3 +22,8 @@ def test_selector_standalone():
     sel = Selector(Expr)
     sel.visit(node, head=True)
     assert len(sel.out) == 0
+
+
+@pytest.mark.parametrize("num, ord", [(1, "first"), (12, "12th"), (23, "23rd")])
+def test_ord(num, ord):
+    assert get_ord(num) == ord
