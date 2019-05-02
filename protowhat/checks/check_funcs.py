@@ -1,3 +1,5 @@
+import re
+
 from functools import partial, wraps
 
 from protowhat.Feedback import Feedback
@@ -125,10 +127,14 @@ def check_edge(
             clause =  select.check_edge('from_clause', None)    # get from_clause (a list)
             clause2 = select.check_edge('from_clause', 0)       # get first entry in from_clause
     """
+    def select(node_name, node):
+        attr = state.ast_dispatcher.select(node_name, node)
+        if attr and isinstance(attr, list) and index is not None:
+            attr = attr[index]
+        return attr
+
     try:
-        sol_attr = getattr(state.solution_ast, name)
-        if sol_attr and isinstance(sol_attr, list) and index is not None:
-            sol_attr = sol_attr[index]
+        sol_attr = select(name, state.solution_ast)
     except IndexError:
         raise IndexError("Can't get %s attribute" % name)
 
@@ -141,9 +147,7 @@ def check_edge(
         _msg = MSG_CHECK_FALLBACK
 
     try:
-        stu_attr = getattr(state.student_ast, name)
-        if stu_attr and isinstance(stu_attr, list) and index is not None:
-            stu_attr = stu_attr[index]
+        stu_attr = select(name, state.student_ast)
     except:
         state.report(Feedback(_msg))
 
@@ -152,9 +156,6 @@ def check_edge(
         state.report(Feedback(_msg))
 
     return state.to_child(student_ast=stu_attr, solution_ast=sol_attr)
-
-
-import re
 
 
 def has_code(

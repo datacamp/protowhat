@@ -1,4 +1,5 @@
 from typing import TypeVar, Generic, Union, List, Dict, Tuple
+from collections import Mapping
 from ast import NodeVisitor
 import inspect
 import importlib
@@ -9,10 +10,14 @@ class Selector(NodeVisitor):
         self.target_cls = target_cls
         self.target_cls_name = target_cls_name
         self.strict = strict
-        self.priority = target_cls._priority if priority is None else priority
+        self.priority = priority if priority else self._get_node_priority(target_cls)
         self.out = []
 
     def visit(self, node, head=False):
+        """
+        Find child nodes at the first level
+        and keep searching if their children have a lower priority
+        """
         if head:
             return super().visit(node)
 
@@ -42,7 +47,10 @@ class Selector(NodeVisitor):
                 return False
 
     def has_priority_over(self, node):
-        return self.priority > node._priority
+        return self.priority > self._get_node_priority(node)
+
+    def _get_node_priority(self, node):
+        return getattr(node, "_priority", 0)
 
 
 T = TypeVar("T")
@@ -66,8 +74,7 @@ class DispatcherInterface(Generic[T]):
             except ValueError:
                 return x
 
-        steps = map(parse_int, steps)
-        return list(steps)
+        return [parse_int(step) for step in steps if step]
 
     def parse(self, code: str):
         raise NotImplementedError
@@ -86,7 +93,7 @@ class Dispatcher(DispatcherInterface):
         )
 
     def find(self, name, node, *args, **kwargs):
-        if name in self.nodes:
+        if self.nodes and name in self.nodes:
             ast_cls = self.nodes[name]
             strict_selector = True
         else:
@@ -110,7 +117,10 @@ class Dispatcher(DispatcherInterface):
             spec = self._path_str_to_list(spec)
         for step in spec:
             if isinstance(step, str):
-                result = getattr(result, step, None)
+                if isinstance(result, Mapping):
+                    result = result.get(step, None)
+                else:
+                    result = getattr(result, step, None)
             elif isinstance(step, int):
                 result = result[step] if len(result) > step else None
             if result is None:
@@ -172,5 +182,7 @@ def get_ord(num):
         return nums[num]
     else:
         return (
-            {1: "{}st", 2: "{}nd", 3: "{}rd"}.get(num if (num < 20) else (num % 10), "{}th")
+            {1: "{}st", 2: "{}nd", 3: "{}rd"}.get(
+                num if (num < 20) else (num % 10), "{}th"
+            )
         ).format(num)
