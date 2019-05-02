@@ -1,5 +1,4 @@
 from copy import copy
-import inspect
 from jinja2 import Template
 
 from protowhat.selectors import DispatcherInterface
@@ -46,9 +45,11 @@ class State:
         student_ast=None,
         ast_dispatcher=None,
     ):
-
-        for k, v in locals().items():
+        args = locals().copy()
+        self.params = list()
+        for k, v in args.items():
             if k != "self":
+                self.params.append(k)
                 setattr(self, k, v)
 
         self.messages = messages if messages else []
@@ -61,8 +62,6 @@ class State:
             self.solution_ast = self.parse(self.solution_code, test=False)
         if isinstance(self.student_code, str) and self.student_ast is None:
             self.student_ast = self.parse(self.student_code)
-
-        self._child_params = inspect.signature(State.__init__).parameters
 
     def parse(self, text, test=True):
         result = None
@@ -144,7 +143,7 @@ class State:
     def to_child(self, append_message="", **kwargs):
         """Basic implementation of returning a child state"""
 
-        bad_pars = set(kwargs) - set(self._child_params)
+        bad_pars = set(kwargs) - set(self.params)
         if bad_pars:
             raise KeyError("Invalid init params for State: %s" % ", ".join(bad_pars))
 
