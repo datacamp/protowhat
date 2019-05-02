@@ -48,7 +48,8 @@ class TestRunnerProxy(TestRunner):
         self.runner = runner
 
     def do_test(self, test):
-        self.tests.append(test)
+        if isinstance(test, Test):
+            self.tests.append(test)
         return self.runner.do_test(test)
 
 
