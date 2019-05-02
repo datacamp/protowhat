@@ -84,7 +84,7 @@ class Dispatcher(DispatcherInterface):
     def __init__(self, node_cls, nodes=None, ast_mod=None, safe_parsing=True):
         """Wrapper to instantiate and use a Selector using node names."""
         self.node_cls = node_cls
-        self.nodes = nodes or {}
+        self.nodes = nodes or getattr(ast_mod, "nodes", {})
         self.ast_mod = ast_mod
         self.safe_parsing = safe_parsing
 
