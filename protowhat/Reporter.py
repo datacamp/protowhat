@@ -1,5 +1,5 @@
 import re
-from copy import copy
+from collections import Counter
 
 import markdown2
 from protowhat.Test import Test
@@ -60,6 +60,9 @@ class Reporter(TestRunnerProxy):
     or not. All tests are executed trough do_test() in the Reporter.
     """
 
+    # This is the offset for ANTLR
+    ast_highlight_offset = {"column_start": 1, "column_end": 1}
+
     def __init__(self, runner=None, errors=None, highlight_offset=None):
         super().__init__(runner or TestRunner())
         self.errors = errors
@@ -74,17 +77,15 @@ class Reporter(TestRunnerProxy):
         self.errors_allowed = True
 
     def build_failed_payload(self, feedback):
-        highlight_offset = copy(self.highlight_offset)
-        if (
-            "line_start" in highlight_offset
-            and "line_end" not in highlight_offset
-        ):
-            highlight_offset["line_end"] = highlight_offset["line_start"]
+        highlight = Counter()
+        code_highlight = feedback.get_highlight_data()
+        if code_highlight:
+            highlight.update(self.highlight_offset)
+            if "line_start" in highlight and "line_end" not in highlight:
+                highlight["line_end"] = highlight["line_start"]
 
-        highlight = copy(feedback.get_highlight_info())
-        for k in highlight_offset:
-            if k in highlight:
-                highlight[k] = highlight[k] + highlight_offset[k]
+            highlight.update(code_highlight)
+            highlight.update(self.ast_highlight_offset)
 
         return {
             "correct": False,
