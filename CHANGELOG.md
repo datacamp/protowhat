@@ -2,6 +2,16 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.7.0
+
+This release improves the base functionality for all depending SCT libraries.
+
+- Add `_debug` SCT introspection function
+- Add `State.parent_state` and `State.state_history` as a general state linking mechanism (using `State.creator`)
+- Add `TestRunner` and `TestRunnerProxy` and make `Reporter` a `TestRunnerProxy`
+- Add AST and text offset support in `Runner`
+- Improve `Dispatcher`, `Feedback` and `Test` interfaces
+
 ## 1.6.0
 
 This release enables protowhat to be the base for pythonwhat.
