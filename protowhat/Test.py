@@ -1,5 +1,4 @@
 from protowhat.Feedback import Feedback
-import numpy as np
 
 
 class TestFail(Exception):
@@ -47,7 +46,7 @@ class Test:
         if self.result is None:
             try:
                 self.test()
-                self.result = bool(np.array(self.result).all())
+                self.result = bool(self.result)
             except:
                 self.result = False
 
