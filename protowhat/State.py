@@ -4,6 +4,7 @@ from jinja2 import Template
 from protowhat.selectors import DispatcherInterface
 from protowhat.Feedback import Feedback, InstructorError
 from protowhat.Test import Fail, Test, TestFail
+from protowhat.utils import _debug
 
 
 class DummyDispatcher(DispatcherInterface):
@@ -134,6 +135,9 @@ class State:
     def do_test(self, test: Test):
         result, feedback = self.reporter.do_test(test)
         if result is False:
+            if getattr(self, "debug", False):
+                setattr(self, "debug", False)  # prevent loop
+                _debug(self)
             raise TestFail(feedback, self.reporter.build_failed_payload(feedback))
         return result, feedback
 

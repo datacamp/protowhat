@@ -1,3 +1,4 @@
+from protowhat.Feedback import Feedback
 from protowhat.Reporter import Reporter
 from protowhat.State import State
 from protowhat.Test import Test
@@ -20,5 +21,9 @@ def child_state(state):
     return state.to_child()
 
 
+def fail(state):
+    state.report(Feedback("Fail"))
+
+
 def dummy_checks():
-    return {"noop": noop, "child_state": child_state}
+    return {"noop": noop, "child_state": child_state, "fail": fail}

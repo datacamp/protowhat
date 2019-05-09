@@ -65,6 +65,7 @@ class Reporter(TestRunnerProxy):
 
     def __init__(self, runner=None, errors=None, highlight_offset=None):
         super().__init__(runner or TestRunner())
+        self.fail = False
         self.errors = errors
         self.errors_allowed = False
         self.highlight_offset = highlight_offset or {}
@@ -94,7 +95,7 @@ class Reporter(TestRunnerProxy):
         }
 
     def build_final_payload(self):
-        if self.errors and not self.errors_allowed:
+        if self.fail or self.errors and not self.errors_allowed:
             feedback_msg = "Your code generated an error. Fix it and try again!"
             return {"correct": False, "message": Reporter.to_html(feedback_msg)}
         else:

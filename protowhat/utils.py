@@ -3,7 +3,7 @@ from functools import wraps
 from protowhat.Feedback import Feedback
 
 
-def _debug(state, msg=""):
+def _debug(state, msg="", on_error=False):
     """
     This SCT function makes the SCT fail with a message containing debugging information
     and highlights the focus of the SCT at that point.
@@ -24,8 +24,14 @@ def _debug(state, msg=""):
     if state.reporter.tests:
         feedback += "\nLast test: `{}`".format(repr(state.reporter.tests[-1]))
 
-    # latest highlight added automatically
-    state.report(Feedback(feedback))
+    if not on_error:
+        # latest highlight added automatically
+        state.report(Feedback(feedback))
+    else:
+        # debug on next failure
+        state.debug = True
+        # or at the end (to prevent debug mode in production)
+        state.reporter.fail = True
 
     return state
 
