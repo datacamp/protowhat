@@ -59,6 +59,9 @@ class Test:
     def get_feedback(self):
         return self.feedback
 
+    def __repr__(self):
+        return "{} {}".format(self.__class__.__name__, str(vars(self)))
+
 
 class Fail(Test):
     def test(self):
