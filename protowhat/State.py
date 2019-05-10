@@ -127,7 +127,9 @@ class State:
 
     def report(self, feedback: str):
         test_feedback = Feedback(feedback, self)
-        if test_feedback.highlight is None and self is not getattr(self, "root_state", None):
+        if test_feedback.highlight is None and self is not getattr(
+            self, "root_state", None
+        ):
             test_feedback.highlight = self.student_ast
         test = Fail(test_feedback)
 

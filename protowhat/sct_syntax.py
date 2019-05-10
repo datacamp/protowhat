@@ -25,7 +25,11 @@ def link_to_state(check):
     @wraps(check)
     def wrapper(state, *args, **kwargs):
         new_state = check(state, *args, **kwargs)
-        if new_state != state and hasattr(new_state, "creator") and not isinstance(check, F):
+        if (
+            new_state != state
+            and hasattr(new_state, "creator")
+            and not isinstance(check, F)
+        ):
             ba = inspect.signature(check).bind(state, *args, **kwargs)
             ba.apply_defaults()
             new_state.creator = {"type": check.__name__, "args": ba.arguments}
