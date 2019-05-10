@@ -2,6 +2,14 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.8.0
+
+- `Feedback` doesn't need to be subclassed in depending SCT libraries.
+- `_debug` now has an `on_error` argument which can be set to `True` to show debugging info
+on the next failure or before finishing.
+- No NumPy dependency
+- Simplified `State.report`
+
 ## 1.7.0
 
 This release improves the base functionality for all depending SCT libraries.
