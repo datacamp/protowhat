@@ -22,7 +22,7 @@ def child_state(state):
 
 
 def fail(state):
-    state.report(Feedback("Fail"))
+    state.report("Fail")
 
 
 def dummy_checks():

@@ -1,5 +1,5 @@
 from protowhat.Feedback import Feedback
-from protowhat.Test import TestFail
+from protowhat.Test import TestFail, Fail
 from functools import partial
 
 from protowhat.utils import legacy_signature
@@ -68,7 +68,7 @@ def check_not(state, *tests, msg):
         except TestFail:
             # it fails, as expected, off to next one
             continue
-        return state.report(Feedback(msg))
+        return state.report(msg)
 
     # return original state, so can be chained
     return state
@@ -111,7 +111,7 @@ def check_or(state, *tests):
         if success:
             return state  # todo: add test
 
-    state.report(first_feedback)
+    state.do_test(Fail(first_feedback))
 
 
 def check_correct(state, check, diagnose):
@@ -146,7 +146,7 @@ def check_correct(state, check, diagnose):
             feedback = e.feedback
 
     if feedback is not None:
-        state.report(feedback)
+        state.do_test(Fail(feedback))
 
     return state  # todo: add test
 
@@ -180,6 +180,6 @@ def fail(state, msg="fail"):
     For example, failing a test will highlight the code as if the previous test/check had failed.
     """
     _msg = state.build_message(msg)
-    state.report(Feedback(_msg, state))
+    state.report(_msg)
 
     return state

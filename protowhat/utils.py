@@ -26,7 +26,7 @@ def _debug(state, msg="", on_error=False):
 
     if not on_error:
         # latest highlight added automatically
-        state.report(Feedback(feedback))
+        state.report(feedback)
     else:
         # debug on next failure
         state.debug = True
