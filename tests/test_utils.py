@@ -13,7 +13,10 @@ def test_debug(state, dummy_checks):
     state.do_test(Success("msg"))
     Ex = ExGen(state, dummy_checks)
     try:
-        Ex().noop().child_state() >> F(attr_scts={"_debug": _debug})._debug("breakpoint name")
+        Ex().noop().child_state() >> F(attr_scts={"_debug": _debug})._debug(
+            "breakpoint name"
+        )
+        assert False
     except TF as e:
         assert "breakpoint name" in str(e)
         assert "history" in str(e)
@@ -25,6 +28,7 @@ def test_delayed_debug(state, dummy_checks):
     Ex = ExGen(state, {"_debug": _debug, **dummy_checks})
     try:
         Ex()._debug("breakpoint name", on_error=True).noop().child_state().fail()
+        assert False
     except TF as e:
         assert "history" in str(e)
         assert "child_state" in str(e)

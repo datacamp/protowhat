@@ -37,14 +37,24 @@ def test_test_runner_proxy():
 
 
 highlight_range_1 = {"line_start": 1, "column_start": 3, "line_end": 5, "column_end": 7}
-highlight_payload_1 = {"line_start": 1, "column_start": 4, "line_end": 5, "column_end": 8}
+highlight_payload_1 = {
+    "line_start": 1,
+    "column_start": 4,
+    "line_end": 5,
+    "column_end": 8,
+}
 highlight_range_2 = {
     "line_start": 3,
     "column_start": 5,
     "line_end": 7,
     "column_end": 11,
 }
-highlight_payload_2 = {"line_start": 3, "column_start": 6, "line_end": 7, "column_end": 12}
+highlight_payload_2 = {
+    "line_start": 3,
+    "column_start": 6,
+    "line_end": 7,
+    "column_end": 12,
+}
 highlight_combined = Counter()
 highlight_combined.update(highlight_payload_1)
 highlight_combined.update(highlight_range_2)

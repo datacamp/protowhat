@@ -127,6 +127,7 @@ def check_edge(
             clause =  select.check_edge('from_clause', None)    # get from_clause (a list)
             clause2 = select.check_edge('from_clause', 0)       # get first entry in from_clause
     """
+
     def select(node_name, node):
         attr = state.ast_dispatcher.select(node_name, node)
         if attr and isinstance(attr, list) and index is not None:

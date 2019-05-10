@@ -4,6 +4,7 @@ from protowhat.selectors import Selector, get_ord, DispatcherInterface, Dispatch
 
 # use python's builtin ast library
 from ast import AST, Expr, Num
+
 Num._priority = 1
 
 

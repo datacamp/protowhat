@@ -9,9 +9,7 @@ def _debug(state, msg="", on_error=False):
     and highlights the focus of the SCT at that point.
     """
     check_history = [
-        s.creator["type"]
-        for s in state.state_history
-        if getattr(s, "creator", None)
+        s.creator["type"] for s in state.state_history if getattr(s, "creator", None)
     ]
 
     feedback = ""
