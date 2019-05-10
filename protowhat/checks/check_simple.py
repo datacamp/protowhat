@@ -20,7 +20,7 @@ def has_chosen(state, correct, msgs):
     exec(state.student_code, globals(), ctxt)
     sel_indx = ctxt["selected_option"]
     if sel_indx != correct:
-        state.report(Feedback(msgs[sel_indx - 1]))
+        state.report(msgs[sel_indx - 1])
     else:
         state.reporter.success_msg = msgs[correct - 1]
 

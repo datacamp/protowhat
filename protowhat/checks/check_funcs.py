@@ -90,7 +90,7 @@ def check_node(
         )
         if _msg is None:
             _msg = MSG_CHECK_FALLBACK
-        state.report(Feedback(_msg))
+        state.report(_msg)
 
     return state.to_child(student_ast=stu_stmt, solution_ast=sol_stmt)
 
@@ -149,11 +149,11 @@ def check_edge(
     try:
         stu_attr = select(name, state.student_ast)
     except:
-        state.report(Feedback(_msg))
+        state.report(_msg)
 
     # fail if attribute exists, but is none only for student
     if stu_attr is None and sol_attr is not None:
-        state.report(Feedback(_msg))
+        state.report(_msg)
 
     return state.to_child(student_ast=stu_attr, solution_ast=sol_attr)
 
@@ -227,7 +227,7 @@ def has_code(
     res = text in stu_text if fixed else re.search(text, stu_text)
 
     if not res:
-        state.report(Feedback(_msg))
+        state.report(_msg)
 
     return state
 
@@ -304,7 +304,7 @@ def has_equal_ast(
         else "Something is missing.",
     )
     if (exact and (sol_rep != stu_rep)) or (not exact and (sol_rep not in stu_rep)):
-        state.report(Feedback(_msg))
+        state.report(_msg)
 
     return state
 
@@ -312,6 +312,6 @@ def has_equal_ast(
 def has_parsed_ast(state):
     asts = [state.student_ast, state.solution_ast]
     if any(isinstance(c, state.ast_dispatcher.ParseError) for c in asts):
-        state.report(Feedback("AST did not parse"))
+        state.report("AST did not parse")
 
     return state

@@ -18,9 +18,9 @@ def check_file(
 
     p = Path(path)
     if not p.exists():
-        state.report(Feedback(missing_msg.format(path)))  # test file exists
+        state.report(missing_msg.format(path))  # test file exists
     if p.is_dir():
-        state.report(Feedback(is_dir_msg.format(path)))  # test its not a dir
+        state.report(is_dir_msg.format(path))  # test its not a dir
 
     code = p.read_text()
 
@@ -41,7 +41,7 @@ def check_file(
 def has_dir(state, path, incorrect_msg="Did you create a directory `{}`?"):
     """Test whether a directory exists."""
     if not Path(path).is_dir():
-        state.report(Feedback(incorrect_msg.format(path)))
+        state.report(incorrect_msg.format(path))
 
     return state
 
