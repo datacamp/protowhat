@@ -1,6 +1,7 @@
+from protowhat.check import Check
 
 
-def has_chosen(state, correct, msgs):
+class HasChosen(Check):
     """Verify exercises of the type MultipleChoiceExercise
 
     Args:
@@ -14,19 +15,22 @@ def has_chosen(state, correct, msgs):
 
             Ex().has_chosen(1, ['Correct!', 'Incorrect. Try again!'])
     """
+    def __init__(self, correct, msgs):
+        super().__init__(locals())
 
-    ctxt = {}
-    exec(state.student_code, globals(), ctxt)
-    sel_indx = ctxt["selected_option"]
-    if sel_indx != correct:
-        state.report(msgs[sel_indx - 1])
-    else:
-        state.reporter.success_msg = msgs[correct - 1]
+    def call(self, state):
+        ctxt = {}
+        exec(state.student_code, globals(), ctxt)
+        sel_indx = ctxt["selected_option"]
+        if sel_indx != self.correct:
+            state.report(self.msgs[sel_indx - 1])
+        else:
+            state.reporter.success_msg = self.msgs[self.correct - 1]
 
-    return state
+        return state
 
 
-def allow_errors(state):
+class AllowErrors(Check):
     """
     Allow running the student code to generate errors.
 
@@ -38,12 +42,13 @@ def allow_errors(state):
 
             Ex().allow_errors()
     """
-    state.reporter.allow_errors()
+    def call(self, state):
+        state.reporter.allow_errors()
 
-    return state
+        return state
 
 
-def success_msg(state, msg):
+class SuccessMsg(Check):
     """
     Changes the success message to display if submission passes.
 
@@ -57,6 +62,10 @@ def success_msg(state, msg):
             Ex().success_msg("You did it!")
 
     """
-    state.reporter.success_msg = msg
+    def __init__(self, msg):
+        super().__init__(locals())
 
-    return state
+    def call(self, state):
+        state.reporter.success_msg = self.msg
+
+        return state

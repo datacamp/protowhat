@@ -1,18 +1,12 @@
 from pathlib import Path
 
+from protowhat.check import Check
 
-def check_file(
-    state,
-    path,
-    missing_msg="Did you create the file `{}`?",
-    is_dir_msg="Want to check the file `{}`, but found a directory.",
-    parse=True,
-    solution_code=None,
-):
+
+class CheckFile(Check):
     """Test whether file exists, and make its contents the student code.
 
     Args:
-        state: State instance describing student and solution code. Can be omitted if used with Ex().
         path: expected location of the file
         missing_msg: feedback message if no file is found in the expected location
         is_dir_msg: feedback message if the path is a directory instead of a file
@@ -32,37 +26,47 @@ def check_file(
             Ex().check_file("resources/my_output.txt", parse=False)
     """
 
-    path_obj = Path(path)
-    if not path_obj.exists():
-        state.report(missing_msg.format(path))  # test file exists
-    if path_obj.is_dir():
-        state.report(is_dir_msg.format(path))  # test its not a dir
+    def __init__(
+        self,
+        path,
+        missing_msg="Did you create the file `{}`?",
+        is_dir_msg="Want to check the file `{}`, but found a directory.",
+        parse=True,
+        solution_code=None,
+    ):
+        super().__init__(locals())
 
-    code = get_file_content(path_obj)
+    def call(self, state):
+        path_obj = Path(self.path)
+        if not path_obj.exists():
+            state.report(self.missing_msg.format(self.path))  # test file exists
+        if path_obj.is_dir():
+            state.report(self.is_dir_msg.format(self.path))  # test its not a dir
 
-    sol_kwargs = {"solution_code": solution_code, "solution_ast": None}
-    if solution_code:
-        sol_kwargs["solution_ast"] = (
-            state.parse(solution_code, test=False) if parse else False
+        code = get_file_content(path_obj)
+
+        sol_kwargs = {"solution_code": self.solution_code, "solution_ast": None}
+        if self.solution_code:
+            sol_kwargs["solution_ast"] = (
+                state.parse(self.solution_code, test=False) if self.parse else False
+            )
+
+        child_state = state.to_child(
+            append_message="We checked the file `{}`. ".format(self.path),
+            student_code=code,
+            student_ast=state.parse(code) if self.parse else False,
+            **sol_kwargs
         )
 
-    child_state = state.to_child(
-        append_message="We checked the file `{}`. ".format(path),
-        student_code=code,
-        student_ast=state.parse(code) if parse else False,
-        **sol_kwargs
-    )
+        child_state.path = path_obj   # .parent + .name
 
-    child_state.path = path_obj  # .parent + .name
-
-    return child_state
+        return child_state
 
 
-def has_dir(state, path, msg="Did you create a directory `{}`?"):
+class HasDir(Check):
     """Test whether a directory exists.
 
     Args:
-        state: State instance describing student and solution code. Can be omitted if used with Ex().
         path: expected location of the directory
         msg: feedback message if no directory is found in the expected location
 
@@ -73,10 +77,14 @@ def has_dir(state, path, msg="Did you create a directory `{}`?"):
 
             Ex().has_dir("resources")
     """
-    if not Path(path).is_dir():
-        state.report(msg.format(path))
+    def __init__(self, path, msg="Did you create a directory `{}`?"):
+        super().__init__(locals())
 
-    return state
+    def call(self, state):
+        if not Path(self.path).is_dir():
+            state.report(self.msg.format(self.path))
+
+        return state
 
 
 # helper functions

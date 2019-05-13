@@ -61,6 +61,9 @@ class AstNode(AST):
     def get_text(self, full_text=None):
         raise NotImplementedError()
 
+    def _text_for_range(position, full_text):
+        pass
+
     def get_position(self):
         raise NotImplementedError()
 
