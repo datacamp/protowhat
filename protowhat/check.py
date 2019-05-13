@@ -1,4 +1,5 @@
 import re
+from functools import wraps
 
 from protowhat.State import State
 
@@ -41,6 +42,7 @@ class Check:
         self.then = []
 
     # decorator to store state check was called with
+    # + link_to_state functionality
     def call(self, state: State) -> State:
         raise NotImplementedError
 
@@ -80,6 +82,22 @@ class Check:
             this = this.format(", ".join(next_chains))
 
         return this
+
+
+def store_call_data(f):
+    # this doesn't work for
+    # - kwargs that are set after init or
+    # - updates to args after init
+    @wraps(f)
+    def wrapper(self, *args, **kwargs):
+        # only works correctly if args aren't updated after init
+        self.args_init_values = args
+
+        # these can be updated after init
+        self.passed_kwargs = kwargs
+        return f(self, *args, **kwargs)
+
+    return wrapper
 
 
 def pascal_to_snake(cls_name):

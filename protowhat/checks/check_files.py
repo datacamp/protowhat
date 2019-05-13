@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from protowhat.check import Check
+from protowhat.check import Check, store_call_data
 
 
 class CheckFile(Check):
@@ -26,6 +26,7 @@ class CheckFile(Check):
             Ex().check_file("resources/my_output.txt", parse=False)
     """
 
+    @store_call_data
     def __init__(
         self,
         path,
@@ -77,6 +78,7 @@ class HasDir(Check):
 
             Ex().has_dir("resources")
     """
+    @store_call_data
     def __init__(self, path, msg="Did you create a directory `{}`?"):
         super().__init__(locals())
 

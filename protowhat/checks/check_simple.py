@@ -1,4 +1,4 @@
-from protowhat.check import Check
+from protowhat.check import Check, store_call_data
 
 
 class HasChosen(Check):
@@ -15,6 +15,7 @@ class HasChosen(Check):
 
             Ex().has_chosen(1, ['Correct!', 'Incorrect. Try again!'])
     """
+    @store_call_data
     def __init__(self, correct, msgs):
         super().__init__(locals())
 
@@ -62,6 +63,7 @@ class SuccessMsg(Check):
             Ex().success_msg("You did it!")
 
     """
+    @store_call_data
     def __init__(self, msg):
         super().__init__(locals())
 
