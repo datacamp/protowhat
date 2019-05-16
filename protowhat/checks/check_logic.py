@@ -137,12 +137,10 @@ def check_correct(state, check, diagnose):
     except TestFail as e:
         feedback = e.feedback
 
-    # todo: let if from except wrap try-except
-    #  only once teach uses force_diagnose
-    try:
-        multi(state, diagnose)
-    except TestFail as e:
-        if feedback is not None or getattr(state, "force_diagnose", False):
+    if feedback is not None or getattr(state, "force_diagnose", False):
+        try:
+            multi(state, diagnose)
+        except TestFail as e:
             feedback = e.feedback
 
     if feedback is not None:
