@@ -1,5 +1,5 @@
 # protowhat deps
-markdown2~=2.3.5
+markdown2~=2.3.7
 jinja2~=2.10
 numpy
 
