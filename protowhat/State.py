@@ -59,6 +59,7 @@ class State:
             self.ast_dispatcher = self.get_dispatcher()
 
         # Parse solution and student code
+        # if possible, not done yet and wanted (ast arguments not False)
         if isinstance(self.solution_code, str) and self.solution_ast is None:
             self.solution_ast = self.parse(self.solution_code, test=False)
         if isinstance(self.student_code, str) and self.student_ast is None:

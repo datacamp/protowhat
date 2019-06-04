@@ -63,7 +63,7 @@ class Chain:
             self._double_attr_error()
         else:
             # make a copy to return,
-            # in case someone does: a = chain.a; b = chain.b
+            # in case someone does: chain = chain_of_checks; chain.a; chain.b
             return self._sct_copy(attr_scts[attr])
 
     def __call__(self, *args, **kwargs):

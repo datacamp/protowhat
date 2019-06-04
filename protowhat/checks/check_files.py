@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from protowhat.Feedback import Feedback
-
 
 def check_file(
     state,
@@ -16,24 +14,24 @@ def check_file(
     Note: this SCT fails if the file is a directory.
     """
 
-    p = Path(path)
-    if not p.exists():
+    path_obj = Path(path)
+    if not path_obj.exists():
         state.report(missing_msg.format(path))  # test file exists
-    if p.is_dir():
+    if path_obj.is_dir():
         state.report(is_dir_msg.format(path))  # test its not a dir
 
-    code = p.read_text()
+    code = get_file_content(path_obj)
 
     sol_kwargs = {"solution_code": solution_code, "solution_ast": None}
     if solution_code:
         sol_kwargs["solution_ast"] = (
-            state.parse(solution_code, test=False) if parse else None
+            state.parse(solution_code, test=False) if parse else False
         )
 
     return state.to_child(
         append_message="We checked the file `{}`. ".format(path),
         student_code=code,
-        student_ast=state.parse(code) if parse else None,
+        student_ast=state.parse(code) if parse else False,
         **sol_kwargs
     )
 
@@ -50,6 +48,18 @@ def has_dir(state, path, incorrect_msg="Did you create a directory `{}`?"):
 def load_file(relative_path, prefix=""):
     # the prefix can be partialed
     # so it's not needed to copy the common part of paths
-    p = Path(prefix, relative_path)
+    path = Path(prefix, relative_path)
 
-    return p.read_text()
+    return get_file_content(path)
+
+
+def get_file_content(path):
+    if not isinstance(path, Path):
+        path = Path(path)
+
+    try:
+        content = path.read_text(encoding="utf-8")
+    except:
+        content = None
+
+    return content
