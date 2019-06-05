@@ -2,6 +2,11 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.8.2
+
+- Support unicode when checking files
+- Fix disabling parsing file content
+
 ## 1.8.0
 
 - `Feedback` doesn't need to be subclassed in depending SCT libraries.
