@@ -1,7 +1,10 @@
 import inspect
 import copy
 import builtins
+from contextlib import contextmanager
 from functools import wraps, reduce, partial
+
+from protowhat.Reporter import Reporter
 
 
 def state_dec_gen(state_cls, attr_scts):
@@ -185,3 +188,61 @@ def create_sct_context(State, sct_dict, root_state=None):
     }
 
     return ctx
+
+
+def create_embed_state(parent_state, XState, state_args=None, highlight_offset=None):
+    embedded_state_params = inspect.signature(XState)
+
+    args = {}
+    for arg in embedded_state_params:
+        if hasattr(parent_state, arg):
+            args[arg] = getattr(parent_state, arg)
+
+    args.update(
+        {
+            **(state_args or {}),
+            "reporter": Reporter(
+                parent_state.reporter, highlight_offset=highlight_offset or {}
+            ),
+        }
+    )
+
+    return XState(args)
+
+
+def create_embed_context(context, technology, **kwargs):
+    parent_state = context._state
+
+    xwhat = __import__("{}what".format(technology))
+
+    XState = xwhat.State.State
+
+    embedded_state = create_embed_state(parent_state, XState, **kwargs)
+
+    return create_sct_context(
+        XState, xwhat.sct_syntax.sct_dict, root_state=embedded_state
+    )
+
+
+def get_embed_chain_constructors(*args, **kwargs):
+    new_context = create_sct_context(*args, **kwargs)
+    return new_context["Ex"], new_context["F"]
+
+
+@contextmanager
+def embed_xwhat(*args, **kwargs):
+    globals_backup = globals().copy()
+
+    new_context = create_sct_context(*args, **kwargs)
+    EmbeddedEx = new_context["Ex"]
+    EmbeddedF = new_context["F"]
+
+    globals().update(new_context)
+    yield EmbeddedEx, EmbeddedF
+    globals().update(globals_backup)
+
+
+# removed snippets
+# parent_state_params = inspect.signature(parent_state.__class__)
+# new_context = xwhat.sct_syntax.SCT_CTX
+# EmbeddedEx.root_state = embedded_state
