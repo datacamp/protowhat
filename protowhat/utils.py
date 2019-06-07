@@ -1,7 +1,5 @@
 from functools import wraps
 
-from protowhat.Feedback import Feedback
-
 
 def _debug(state, msg="", on_error=False):
     """

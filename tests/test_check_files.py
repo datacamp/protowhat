@@ -13,7 +13,7 @@ from protowhat.Reporter import Reporter
 
 from protowhat.sct_syntax import F, Ex
 from protowhat.checks import check_files as cf
-from protowhat.checks.check_funcs import check_node
+from protowhat.checks.check_funcs import check_node, has_code
 
 # TODO: selectors require a _priority attribute
 #  this is a holdover from the sql ast modules
@@ -102,6 +102,7 @@ def test_check_file(state, temp_file_sum):
 
 def test_check_file_no_parse(state, temp_file_sum):
     child = cf.check_file(state, temp_file_sum.name, parse=False)
+    has_code(child, "1 + 1", fixed=True)
     assert child.student_code == "1 + 1"
     assert child.student_ast is False
     assert child.solution_ast is None  # no solution code is provided
