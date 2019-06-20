@@ -48,6 +48,7 @@ class State:
     ):
         args = locals().copy()
         self.params = list()
+
         for k, v in args.items():
             if k != "self":
                 self.params.append(k)
