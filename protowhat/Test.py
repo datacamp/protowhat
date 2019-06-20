@@ -60,7 +60,7 @@ class Test:
         return self.feedback
 
     def __repr__(self):
-        return "{} {}".format(self.__class__.__name__, str(vars(self)))
+        return "<{} {}>".format(self.__class__.__name__, repr(vars(self)))
 
 
 class Fail(Test):

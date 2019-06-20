@@ -33,6 +33,9 @@ class Feedback:
 
         return result or {}
 
+    def __repr__(self):
+        return "<{} {}>".format(self.__class__.__name__, repr(vars(self)))
+
 
 class InstructorError(Exception):
     pass
