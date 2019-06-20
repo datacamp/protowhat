@@ -118,7 +118,7 @@ def test_sct_dict_creation():
 
     sct_dict = get_checks_dict(check_simple)
 
-    assert len(sct_dict) == 3  # Feedback is also callable
+    assert len(sct_dict) == 4  # Feedback is also callable
     assert sct_dict["has_chosen"] == check_simple.has_chosen
     assert sct_dict["success_msg"] == check_simple.success_msg
 

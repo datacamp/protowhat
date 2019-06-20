@@ -27,6 +27,23 @@ def has_chosen(state, correct, msgs):
     return state
 
 
+def allow_errors(state):
+    """
+    Allow running the student code to generate errors.
+
+    This has to be used only once for every time code is executed or a different xwhat library is used.
+    In most exercises that means it should be used just once.
+
+    :Example:
+        The following SCT allows the student code to generate errors::
+
+            Ex().allow_errors()
+    """
+    state.reporter.allow_errors()
+
+    return state
+
+
 def success_msg(state, msg):
     """
     Changes the success message to display if submission passes.
