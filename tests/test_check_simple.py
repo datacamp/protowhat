@@ -1,11 +1,15 @@
-from protowhat.checks.check_simple import has_chosen, success_msg
+from protowhat.checks.check_simple import has_chosen, success_msg, allow_errors
 from protowhat.sct_syntax import Chain
 from protowhat.State import State
 from protowhat.Reporter import Reporter
 from protowhat.Test import TestFail as TF
 import pytest
 
-sct_ctx = {"has_chosen": has_chosen, "success_msg": success_msg}
+sct_ctx = {
+    "has_chosen": has_chosen,
+    "success_msg": success_msg,
+    "allow_errors": allow_errors,
+}
 
 
 def prepare_state(student_code):
@@ -52,7 +56,7 @@ def test_success_msg_pass():
     success_msg(state, "NEW SUCCESS MSG")
 
     sct_payload = state.reporter.build_final_payload()
-    assert sct_payload["correct"] == True
+    assert sct_payload["correct"] is True
     assert sct_payload["message"] == "NEW SUCCESS MSG"
 
 
@@ -61,5 +65,25 @@ def test_success_msg_pass_ex():
     Chain(state, sct_ctx).success_msg("NEW SUCCESS MSG")
 
     sct_payload = state.reporter.build_final_payload()
-    assert sct_payload["correct"] == True
+    assert sct_payload["correct"] is True
     assert sct_payload["message"] == "NEW SUCCESS MSG"
+
+
+def test_no_allow_errors():
+    state = prepare_state("")
+    state.reporter.errors = ["Error"]
+    Chain(state, sct_ctx).success_msg("Good")
+    sct_payload = state.reporter.build_final_payload()
+    assert sct_payload["correct"] is False
+    assert (
+        sct_payload["message"] == "Your code generated an error. Fix it and try again!"
+    )
+
+
+def test_allow_errors():
+    state = prepare_state("")
+    state.reporter.errors = ["Error"]
+    Chain(state, sct_ctx).allow_errors().success_msg("Good")
+    sct_payload = state.reporter.build_final_payload()
+    assert sct_payload["correct"] is True
+    assert sct_payload["message"] == "Good"
