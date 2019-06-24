@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.9.0
+
+- Add `allow_errors`
+
 ## 1.8.2
 
 - Support unicode when checking files
