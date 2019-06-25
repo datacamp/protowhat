@@ -1,5 +1,7 @@
 import os
 import ast
+from pathlib import Path
+
 import pytest
 
 from functools import partial
@@ -95,9 +97,16 @@ def test_check_file(state, temp_file_sum):
     child = cf.check_file(state, temp_file_sum.name, solution_code="3 + 3")
     assert child.student_code == "1 + 1"
     assert_equal_ast(child.student_ast, ast.parse(child.student_code))
+
     assert child.solution_code == "3 + 3"
     assert_equal_ast(child.solution_ast, ast.parse(child.solution_code))
-    assert check_node(child, "Expr", 0)
+
+    assert child.path == Path(temp_file_sum.name)
+    assert child.path.parent == Path(temp_file_sum.name).parent
+    assert child.path.name == Path(temp_file_sum.name).name
+
+    grandchild = check_node(child, "Expr", 0)
+    assert grandchild.path == child.path
 
 
 def test_check_file_no_parse(state, temp_file_sum):
