@@ -3,11 +3,13 @@ import copy
 import builtins
 from contextlib import contextmanager
 from functools import wraps, reduce, partial
+from typing import Union, Type, Callable, Dict, Any
 
 from protowhat.Reporter import Reporter
+from protowhat.State import State
 
 
-def state_dec_gen(state_cls, attr_scts):
+def state_dec_gen(state_cls: Type[State], attr_scts):
     def state_dec(f):
         """Decorate check_* functions to return F chain if no state passed"""
 
@@ -24,7 +26,7 @@ def state_dec_gen(state_cls, attr_scts):
     return state_dec
 
 
-def link_to_state(check):
+def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
     @wraps(check)
     def wrapper(state, *args, **kwargs):
         new_state = check(state, *args, **kwargs)
@@ -43,7 +45,7 @@ def link_to_state(check):
 
 
 class Chain:
-    def __init__(self, state, attr_scts=None):
+    def __init__(self, state: Union[State, None], attr_scts=None):
         self._state = state
         self._crnt_sct = None
         self._waiting_on_call = False
@@ -176,8 +178,8 @@ def get_checks_dict(checks_module):
     }
 
 
-def create_sct_context(State, sct_dict, root_state=None):
-    state_dec = state_dec_gen(State, sct_dict)
+def create_sct_context(state: Type[State], sct_dict, root_state=None):
+    state_dec = state_dec_gen(state, sct_dict)
     sct_ctx = {k: state_dec(v) for k, v in sct_dict.items()}
 
     ctx = {
@@ -190,8 +192,18 @@ def create_sct_context(State, sct_dict, root_state=None):
     return ctx
 
 
-def create_embed_state(parent_state, XState, state_args=None, highlight_offset=None):
-    embedded_state_params = inspect.signature(XState)
+def create_embed_state(
+    parent_state: State,
+    xstate: Type[State],
+    state_args: Dict[str, Any] = None,
+    highlight_offset: dict = None,
+):
+    # handle xstate args/kwargs
+    embedded_state_params = [
+        param
+        for cls in [xstate, *xstate.__bases__]
+        for param in inspect.signature(cls).parameters
+    ]
 
     args = {}
     for arg in embedded_state_params:
@@ -207,25 +219,25 @@ def create_embed_state(parent_state, XState, state_args=None, highlight_offset=N
         }
     )
 
-    return XState(args)
+    return xstate(**args)
 
 
-def create_embed_context(context, technology, **kwargs):
+def create_embed_context(context: Chain, technology: str, **kwargs):
     parent_state = context._state
 
     xwhat = __import__("{}what".format(technology))
 
-    XState = xwhat.State.State
+    xstate = xwhat.State.State
 
-    embedded_state = create_embed_state(parent_state, XState, **kwargs)
+    embedded_state = create_embed_state(parent_state, xstate, **kwargs)
 
     return create_sct_context(
-        XState, xwhat.sct_syntax.sct_dict, root_state=embedded_state
+        xstate, xwhat.sct_syntax.sct_dict, root_state=embedded_state
     )
 
 
 def get_embed_chain_constructors(*args, **kwargs):
-    new_context = create_sct_context(*args, **kwargs)
+    new_context = create_embed_context(*args, **kwargs)
     return new_context["Ex"], new_context["F"]
 
 
@@ -233,7 +245,7 @@ def get_embed_chain_constructors(*args, **kwargs):
 def embed_xwhat(*args, **kwargs):
     globals_backup = globals().copy()
 
-    new_context = create_sct_context(*args, **kwargs)
+    new_context = create_embed_context(*args, **kwargs)
     EmbeddedEx = new_context["Ex"]
     EmbeddedF = new_context["F"]
 
