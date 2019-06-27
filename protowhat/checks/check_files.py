@@ -28,12 +28,16 @@ def check_file(
             state.parse(solution_code, test=False) if parse else False
         )
 
-    return state.to_child(
+    child_state = state.to_child(
         append_message="We checked the file `{}`. ".format(path),
         student_code=code,
         student_ast=state.parse(code) if parse else False,
         **sol_kwargs
     )
+
+    child_state.path = path_obj   # .parent + .name
+
+    return child_state
 
 
 def has_dir(state, path, incorrect_msg="Did you create a directory `{}`?"):

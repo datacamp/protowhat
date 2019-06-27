@@ -154,7 +154,7 @@ class State:
 
         bad_pars = set(kwargs) - set(self.params)
         if bad_pars:
-            raise KeyError("Invalid init params for State: %s" % ", ".join(bad_pars))
+            raise ValueError("Invalid init params for State: %s" % ", ".join(bad_pars))
 
         child = copy(self)
         for k, v in kwargs.items():
