@@ -1,4 +1,3 @@
-from protowhat.Feedback import Feedback
 
 
 def has_chosen(state, correct, msgs):
