@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.10.0
+
+- Pass file path to SCT chain after `check_file`
+
 ## 1.9.0
 
 - Add `allow_errors`
