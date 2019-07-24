@@ -2,6 +2,8 @@ import re
 from collections import Counter
 
 import markdown2
+
+from protowhat.Feedback import Feedback
 from protowhat.Test import Test
 
 """
@@ -77,9 +79,14 @@ class Reporter(TestRunnerProxy):
     def allow_errors(self):
         self.errors_allowed = True
 
-    def build_failed_payload(self, feedback):
+    def build_failed_payload(self, feedback: Feedback):
         highlight = Counter()
         code_highlight = feedback.get_highlight_data()
+
+        path = code_highlight.get("path", None)
+        if path is not None:
+            del code_highlight["path"]
+
         if code_highlight:
             highlight.update(self.highlight_offset)
             if "line_start" in highlight and "line_end" not in highlight:
@@ -87,6 +94,9 @@ class Reporter(TestRunnerProxy):
 
             highlight.update(code_highlight)
             highlight.update(self.ast_highlight_offset)
+
+        if path is not None:
+            highlight["path"] = str(path)
 
         return {
             "correct": False,

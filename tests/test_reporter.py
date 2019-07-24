@@ -1,4 +1,5 @@
 from collections import Counter
+from pathlib import Path
 
 import pytest
 from protowhat.Feedback import Feedback
@@ -60,9 +61,12 @@ highlight_combined.update(highlight_payload_1)
 highlight_combined.update(highlight_range_2)
 
 
-class FeedbackTest(Feedback):
-    def _highlight_data(self):
-        return self.highlight
+class Highlight:
+    def __init__(self, position):
+        self.position = position
+
+    def get_position(self):
+        return self.position
 
 
 @pytest.mark.parametrize(
@@ -84,8 +88,8 @@ class FeedbackTest(Feedback):
 def test_highlighting_offset(offset, highlight, payload_highlight_info):
     r = Reporter(highlight_offset=offset)
 
-    f = FeedbackTest("msg")
-    f.highlight = highlight
+    f = Feedback("msg")
+    f.highlight = Highlight(highlight)
 
     payload = r.build_failed_payload(f)
 
@@ -97,11 +101,33 @@ def test_highlighting_offset(offset, highlight, payload_highlight_info):
 def test_highlighting_offset_proxy():
     r = Reporter(Reporter(), highlight_offset=highlight_range_2)
 
-    f = FeedbackTest("msg")
-    f.highlight = highlight_range_1
+    f = Feedback("msg")
+    f.highlight = Highlight(highlight_range_1)
 
     payload = r.build_failed_payload(f)
 
     expected_payload = {"correct": False, "message": "msg", **highlight_combined}
+
+    assert payload == expected_payload
+
+
+def test_highlighting_path():
+    r = Reporter()
+
+    class FeedbackState:
+        highlighting_disabled = False
+        highlight = Highlight(highlight_range_1)
+        path = Path("test.py")
+
+    f = Feedback("msg", FeedbackState())
+
+    payload = r.build_failed_payload(f)
+
+    expected_payload = {
+        "correct": False,
+        "message": "msg",
+        "path": "test.py",
+        **highlight_payload_1,
+    }
 
     assert payload == expected_payload

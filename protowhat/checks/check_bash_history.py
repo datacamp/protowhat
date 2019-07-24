@@ -163,8 +163,6 @@ def has_command(state, pattern, msg, fixed=False, commands=None):
                 has_command("touch.*file2", "Use `touch` to create `file2`")
             )
 
-        If
-
     """
     if commands is None:
         commands = get_bash_history()
