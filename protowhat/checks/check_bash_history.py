@@ -39,13 +39,15 @@ as it only has access to the latest commands
 """
 
 
-def update_bash_history_info(bash_history_path=os.environ[BASH_HISTORY_PATH_ENV]):
+def update_bash_history_info(bash_history_path=None):
     """Store initial info about the bash history
 
     ``get_bash_history`` can use this info to get the relevant commands
 
     This function can be called when starting an exercise or every time it is submitted
     """
+    if bash_history_path is None:
+        bash_history_path = os.environ[BASH_HISTORY_PATH_ENV]
     with open(bash_history_path, encoding="utf-8") as f:
         Path(os.environ[BASH_HISTORY_INFO_PATH_ENV]).write_text(
             str(len(f.readlines())), encoding="utf-8"
@@ -53,7 +55,7 @@ def update_bash_history_info(bash_history_path=os.environ[BASH_HISTORY_PATH_ENV]
 
 
 def get_bash_history(
-    full_history=False, bash_history_path=os.environ[BASH_HISTORY_PATH_ENV]
+    full_history=False, bash_history_path=None
 ):
     """Get the commands in the bash history
 
@@ -62,6 +64,8 @@ def get_bash_history(
     :param bash_history_path: path to the bash history file
     :return: a list of commands (empty if the file is not found)
     """
+    if bash_history_path is None:
+        bash_history_path = os.environ[BASH_HISTORY_PATH_ENV]
     try:
         with open(bash_history_path, encoding="utf-8") as f:
             history = f.readlines()
@@ -73,7 +77,7 @@ def get_bash_history(
         return []
 
 
-def has_command(state, pattern, msg, fixed=False, commands=get_bash_history()):
+def has_command(state, pattern, msg, fixed=False, commands=None):
     """Test whether the bash history has a command matching the pattern
 
     Args:
@@ -91,6 +95,10 @@ def has_command(state, pattern, msg, fixed=False, commands=get_bash_history()):
         this can be used everywhere as the (cumulative) commands from all submissions are known.
 
     """
+    if commands is None:
+        commands = get_bash_history()
+    if not commands:
+        state.report("Looking for an executed shell command, we didn't find any.")
     if not state.is_root:
         raise InstructorError(
             "`has_command()` should only be called from the root state, `Ex()`."
