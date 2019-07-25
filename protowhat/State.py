@@ -91,6 +91,10 @@ class State:
             return self.creator["args"]["state"]
 
     @property
+    def is_root(self):
+        return self.parent_state is None
+
+    @property
     def state_history(self):
         history = [self]
         while history[-1].parent_state is not None:
