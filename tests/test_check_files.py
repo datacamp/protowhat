@@ -13,7 +13,7 @@ from protowhat.selectors import Dispatcher
 from protowhat.State import State
 from protowhat.Reporter import Reporter
 
-from protowhat.sct_syntax import F, Ex
+from protowhat.sct_syntax import LazyChain, Ex
 from protowhat.checks import check_files as cf
 from protowhat.checks.check_funcs import check_node, has_code
 
@@ -155,7 +155,7 @@ def test_missing_check_dir(state):
 
 
 def test_check_file_fchain(state, temp_file):
-    f = F(attr_scts={"check_file": cf.check_file})
+    f = LazyChain(attr_scts={"check_file": cf.check_file})
     Ex(state) >> f.check_file(temp_file.name)
 
 
