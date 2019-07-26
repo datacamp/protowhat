@@ -3,7 +3,7 @@ Ex()
 
 .. automethod:: protowhat.sct_syntax.Ex.__call__
 
-AST Checks
+AST checks
 ----------
 
 .. automodule:: protowhat.checks.check_funcs
@@ -15,8 +15,14 @@ Logic
 .. automodule:: protowhat.checks.check_logic
     :members:
 
-Simple tests
-------------
+Simple checks
+-------------
 
 .. automodule:: protowhat.checks.check_simple
+    :members:
+
+Bash history checks
+-------------------
+
+.. automodule:: protowhat.checks.check_bash_history
     :members:

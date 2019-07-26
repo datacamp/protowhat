@@ -2,10 +2,9 @@ import os
 import re
 
 from pathlib import Path
-
-# env vars
 from protowhat.Feedback import InstructorError
 
+# env vars
 BASH_HISTORY_PATH_ENV = "BASH_HISTORY_PATH"
 BASH_HISTORY_INFO_PATH_ENV = "BASH_HISTORY_INFO"
 
@@ -18,33 +17,13 @@ os.environ[BASH_HISTORY_INFO_PATH_ENV] = os.environ.get(
 )
 
 
-"""
-use case:
-bash history used multiple times in SCT
-solution:
-separate bash history info update
-
-use case:
-bash history is not empty from earlier session
-solution:
-update info in PEC or exercise init
-
-use case:
-bash history is not empty from an exercise that didn't use this SCT
-solution:
-update info in PEC or exercise init
-
-If updating info in PEC, only use bash history in check_correct
-as it only has access to the latest commands
-"""
-
-
 def update_bash_history_info(bash_history_path=None):
-    """Store initial info about the bash history
+    """Store the current number of commands in the bash history
 
-    ``get_bash_history`` can use this info to get the relevant commands
+    ``get_bash_history`` can use this info later to get only newer commands.
 
-    This function can be called when starting an exercise or every time it is submitted
+    Depending on the wanted behaviour this function should be called
+    at the start of the exercise or every time the exercise is submitted.
     """
     if bash_history_path is None:
         bash_history_path = os.environ[BASH_HISTORY_PATH_ENV]
@@ -60,7 +39,7 @@ def get_bash_history(
     """Get the commands in the bash history
 
     :param full_history: if true, returns all commands in the bash history,
-        else only return the relevant commands based on bash history info
+        else only return the commands executed after the last bash history info update
     :param bash_history_path: path to the bash history file
     :return: a list of commands (empty if the file is not found)
     """
@@ -77,22 +56,61 @@ def get_bash_history(
         return []
 
 
+"""
+Design considerations
+
+use case:
+bash history used multiple times in SCT
+solution:
+separate bash history info update
+
+use case:
+bash history is not empty from earlier exercise or session (that might not use this SCT)
+solution:
+update info in PEC or exercise init
+
+If updating bash history info in PEC, only use bash history in check_correct
+as it only has access to the latest commands
+"""
+
+
 def has_command(state, pattern, msg, fixed=False, commands=None):
     """Test whether the bash history has a command matching the pattern
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
-        pattern : text that command must contain (can be a regex pattern or a simple string)
+        pattern: text that command must contain (can be a regex pattern or a simple string)
         msg: feedback message if no matching command is found
         fixed: whether to match text exactly, rather than using regular expressions
-        commands: the bash history commands to check against
+        commands: the bash history commands to check against,
+            by default all since the last bash history info update,
+            otherwise the result of calling the helper function
+            ``get_bash_history(full_history=False, bash_history_path=None)``
+            with other arguments can be passed.
+
+    Note:
+        The helper function ``update_bash_history_info(bash_history_path=None)``
+        needs to be called in the pre-exercise code in exercise types that don't have
+        support for bash history features by default.
 
     Note:
         If the bash history info is updated every time code is submitted,
         it's advised to only use this function as the second part of a check_correct
         to help students debug the command they haven't correctly run yet.
-        If the bash history info is updated at the start of an exercise,
+        If the bash history info is only updated at the start of an exercise,
         this can be used everywhere as the (cumulative) commands from all submissions are known.
+
+    :Example:
+
+        The goal of an exercise is to use ``man``.
+
+        In the pre-exercise code, put::
+
+            update_bash_history_info()
+
+        In the SCT, check whether a command with ``man`` was used::
+
+            Ex().has_command("$man\s", "Your command should start with ``man ...``.")
 
     """
     if commands is None:
