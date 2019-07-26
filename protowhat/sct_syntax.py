@@ -20,7 +20,7 @@ def state_dec_gen(state_cls: Type[State], attr_scts):
             if isinstance(state, state_cls):
                 return f(*args, **kwargs)
             else:
-                return F._from_func(f, *args, _attr_scts=attr_scts, **kwargs)
+                return LazyChain._from_func(f, *args, _attr_scts=attr_scts, **kwargs)
 
         return wrapper
 
@@ -34,7 +34,7 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
         if (
             new_state != state
             and hasattr(new_state, "creator")
-            and not isinstance(check, F)
+            and not isinstance(check, LazyChain)
         ):
             ba = inspect.signature(check).bind(state, *args, **kwargs)
             ba.apply_defaults()
@@ -80,7 +80,7 @@ class Chain:
     def __rshift__(self, f):
         if self._waiting_on_call:
             self._double_attr_error()
-        elif isinstance(f, Chain) and not isinstance(f, F):
+        elif isinstance(f, Chain) and not isinstance(f, LazyChain):
             raise BaseException(
                 "did you use a result of the Ex() function on the right hand side of the >> operator?"
             )
@@ -99,7 +99,7 @@ class Chain:
         return chain
 
 
-class F(Chain):
+class LazyChain(Chain):
     def __init__(self, stack=None, attr_scts=None):
         super().__init__(None, attr_scts)
         self._stack = [] if stack is None else stack
@@ -200,7 +200,7 @@ def create_sct_context(
         **sct_ctx,
         "state_dec": state_dec,  # needed by ext packages
         "Ex": ExGen(root_state, sct_ctx),
-        "F": partial(F, attr_scts=sct_ctx),
+        "F": partial(LazyChain, attr_scts=sct_ctx),
     }
 
     return ctx

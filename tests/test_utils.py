@@ -2,7 +2,7 @@ import pytest
 
 from tests.helper import Success, state, dummy_checks
 from protowhat.Test import TestFail as TF
-from protowhat.sct_syntax import ExGen, F
+from protowhat.sct_syntax import ExGen, LazyChain
 from protowhat.utils import (
     legacy_signature,
     _debug,
@@ -18,7 +18,7 @@ def test_debug(state, dummy_checks):
     state.do_test(Success("msg"))
     Ex = ExGen(state, dummy_checks)
     try:
-        Ex().noop().child_state() >> F(attr_scts={"_debug": _debug})._debug(
+        Ex().noop().child_state() >> LazyChain(attr_scts={"_debug": _debug})._debug(
             "breakpoint name"
         )
         assert False
