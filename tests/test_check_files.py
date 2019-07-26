@@ -137,6 +137,12 @@ def test_check_file_dir(state):
     assert "found a directory" in str(exception)
 
 
+def test_check_file_not_readable(state, temp_file_unicode):
+    Path(temp_file_unicode.name).write_bytes("é".encode("latin-1"))
+    child = cf.check_file(state, temp_file_unicode.name, parse=False)
+    assert child.student_code is None
+
+
 def test_check_dir(state):
     with TemporaryDirectory() as td:
         cf.has_dir(state, td)

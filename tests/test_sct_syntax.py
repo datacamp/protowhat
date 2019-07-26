@@ -112,7 +112,10 @@ def test_sct_dict_creation():
 
     sct_dict = get_checks_dict(checks)
     assert isinstance(sct_dict, dict)
-    assert not sct_dict  # checks not exported in init
+    assert sct_dict == {
+        str(sct.__name__): sct
+        for sct in [checks.get_bash_history, checks.update_bash_history_info]
+    }  # other checks not exported in init
 
     from protowhat.checks import check_simple
 

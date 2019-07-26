@@ -11,7 +11,25 @@ def check_file(
 ):
     """Test whether file exists, and make its contents the student code.
 
-    Note: this SCT fails if the file is a directory.
+    Args:
+        state: State instance describing student and solution code. Can be omitted if used with Ex().
+        path: expected location of the file
+        missing_msg: feedback message if no file is found in the expected location
+        is_dir_msg: feedback message if the path is a directory instead of a file
+        parse: If ``True`` (the default) the content of the file is interpreted as code in the main exercise technology.
+            This enables more checks on the content of the file.
+        solution_code: this argument can be used to pass the expected code for the file
+            so it can be used by subsequent checks.
+
+    Note:
+        This SCT fails if the file is a directory.
+
+    :Example:
+
+        To check if a user created the file ``my_output.txt`` in the subdirectory ``resources``
+        of the directory where the exercise is run, use this SCT::
+
+            Ex().check_file("resources/my_output.txt", parse=False)
     """
 
     path_obj = Path(path)
@@ -40,10 +58,23 @@ def check_file(
     return child_state
 
 
-def has_dir(state, path, incorrect_msg="Did you create a directory `{}`?"):
-    """Test whether a directory exists."""
+def has_dir(state, path, msg="Did you create a directory `{}`?"):
+    """Test whether a directory exists.
+
+    Args:
+        state: State instance describing student and solution code. Can be omitted if used with Ex().
+        path: expected location of the directory
+        msg: feedback message if no directory is found in the expected location
+
+    :Example:
+
+        To check if a user created the subdirectory ``resources``
+        in the directory where the exercise is run, use this SCT::
+
+            Ex().has_dir("resources")
+    """
     if not Path(path).is_dir():
-        state.report(incorrect_msg.format(path))
+        state.report(msg.format(path))
 
     return state
 

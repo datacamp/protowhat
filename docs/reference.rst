@@ -21,6 +21,12 @@ Simple checks
 .. automodule:: protowhat.checks.check_simple
     :members:
 
+File checks
+-----------
+
+.. automodule:: protowhat.checks.check_files
+    :members:
+
 Bash history checks
 -------------------
 

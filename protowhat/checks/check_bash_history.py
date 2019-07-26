@@ -24,6 +24,8 @@ def update_bash_history_info(bash_history_path=None):
 
     Depending on the wanted behaviour this function should be called
     at the start of the exercise or every time the exercise is submitted.
+
+    Import using ``from protowhat.checks import update_bash_history_info``.
     """
     if bash_history_path is None:
         bash_history_path = os.environ[BASH_HISTORY_PATH_ENV]
@@ -42,6 +44,8 @@ def get_bash_history(
         else only return the commands executed after the last bash history info update
     :param bash_history_path: path to the bash history file
     :return: a list of commands (empty if the file is not found)
+
+    Import from ``from protowhat.checks import get_bash_history``.
     """
     if bash_history_path is None:
         bash_history_path = os.environ[BASH_HISTORY_PATH_ENV]
