@@ -5,11 +5,11 @@ from protowhat.State import State
 from protowhat.sct_syntax import (
     ExGen,
     Ex,
-    F,
     state_dec_gen,
     get_checks_dict,
     create_sct_context,
     Chain,
+    LazyChain,
 )
 
 state = pytest.fixture(state)
@@ -25,12 +25,12 @@ def addx():
 
 @pytest.fixture
 def f():
-    return F._from_func(lambda state, b: state + b, b="b")
+    return LazyChain._from_func(lambda state, b: state + b, b="b")
 
 
 @pytest.fixture
 def f2():
-    return F._from_func(lambda state, c: state + c, c="c")
+    return LazyChain._from_func(lambda state, c: state + c, c="c")
 
 
 def test_f_from_func(f):
@@ -38,11 +38,11 @@ def test_f_from_func(f):
 
 
 def test_f_sct_copy_kw(addx):
-    assert F()._sct_copy(addx)(x="x")("state") == "statex"
+    assert LazyChain()._sct_copy(addx)(x="x")("state") == "statex"
 
 
 def test_f_sct_copy_pos(addx):
-    assert F()._sct_copy(addx)("x")("state") == "statex"
+    assert LazyChain()._sct_copy(addx)("x")("state") == "statex"
 
 
 def test_ex_sct_copy_kw(addx):
@@ -72,7 +72,7 @@ def test_f_add_f(f, f2):
 def test_f_from_state_dec(addx):
     dec_addx = state_dec(addx)
     f = dec_addx(x="x")
-    isinstance(f, F)
+    isinstance(f, LazyChain)
     assert f("state") == "statex"
 
 
@@ -142,7 +142,7 @@ def test_state_linking_root_creator(state):
     def diagnose(end_state):
         assert end_state.creator is None
 
-    f = F(attr_scts={"diagnose": diagnose})
+    f = LazyChain(attr_scts={"diagnose": diagnose})
     Ex(state) >> f.diagnose()
 
 
@@ -151,7 +151,7 @@ def test_state_linking_root_creator_noop(state, dummy_checks):
         assert end_state.creator is None
 
     TestEx = ExGen(state, dummy_checks)
-    TestEx().noop() >> F(attr_scts={"diagnose": diagnose}).diagnose()
+    TestEx().noop() >> LazyChain(attr_scts={"diagnose": diagnose}).diagnose()
 
 
 def test_state_linking_root_creator_child_state(state, dummy_checks):
@@ -163,4 +163,4 @@ def test_state_linking_root_creator_child_state(state, dummy_checks):
         assert end_state == end_state.state_history[1]
 
     TestEx = ExGen(state, dummy_checks)
-    TestEx().child_state() >> F(attr_scts={"diagnose": diagnose}).diagnose()
+    TestEx().child_state() >> LazyChain(attr_scts={"diagnose": diagnose}).diagnose()
