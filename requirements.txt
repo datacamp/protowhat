@@ -1,14 +1,14 @@
 # protowhat deps
-markdown2~=2.3.7
-jinja2~=2.10
-numpy
+markdown2==2.3.8
+jinja2==2.10.1
+numpy==1.17.0
 
 # test deps
-pytest~=3.5.0
-codecov~=2.0.15
-pytest-cov~=2.5.1
-bashlex~=0.12
+pytest==4.6.2
+codecov==2.0.15
+pytest-cov==2.7.1
+bashlex==0.14
 
 # building documentation
-sphinx~=1.7.4
-sphinx_rtd_theme~=0.3.1
+sphinx==2.1.2
+sphinx-rtd-theme==0.4.3

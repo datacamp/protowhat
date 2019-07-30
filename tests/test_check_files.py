@@ -52,7 +52,7 @@ def temp_file_unicode():
 
 @pytest.fixture(params=["temp_file_sum", "temp_file_unicode"])
 def temp_file(request):
-    return request.getfuncargvalue(request.param)
+    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture
