@@ -2,6 +2,12 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.11.0
+
+- Add bash history SCTs
+- Add `State.is_root` property
+- Return file path in feedback if set
+
 ## 1.10.0
 
 - Pass file path to SCT chain after `check_file`
