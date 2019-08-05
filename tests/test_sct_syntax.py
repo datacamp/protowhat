@@ -8,11 +8,13 @@ from protowhat.sct_syntax import (
     state_dec_gen,
     get_checks_dict,
     create_sct_context,
-    Chain,
+    EagerChain,
     LazyChain,
     create_embed_state,
     create_embed_context,
     get_embed_chain_constructors,
+    ChainStart,
+    Chain,
 )
 
 state = pytest.fixture(state)
@@ -85,7 +87,11 @@ def ex():
 
 
 def test_ex_add_f(ex, f):
-    (ex >> f)._state = "statexb"
+    assert (ex >> f)._state == "statexb"
+
+
+def test_f_add_f(ex, f, f2):
+    assert (ex >> (f >> f2))._state == "statexbc"
 
 
 def test_ex_add_unary(ex):
@@ -151,9 +157,14 @@ def test_create_sct_context(state, dummy_checks):
 
     for chain in ["Ex", "F"]:
         assert chain in sct_ctx
+        assert isinstance(sct_ctx[chain], ChainStart)
         assert isinstance(sct_ctx[chain](), Chain)
+        assert isinstance(sct_ctx[chain]()(state), State)
         for check in dummy_checks:
             assert getattr(sct_ctx[chain](), check)
+
+    assert isinstance(sct_ctx["Ex"](), EagerChain)
+    assert isinstance(sct_ctx["F"](), LazyChain)
 
 
 def test_create_embed_state(state):
@@ -200,8 +211,8 @@ def test_create_embed_context(state, dummy_checks):
     )
 
     # Then
-    assert isinstance(embed_context["get_bash_history"](), Chain)
-    assert isinstance(embed_context["F"]().get_bash_history(), Chain)
+    assert isinstance(embed_context["get_bash_history"](), LazyChain)
+    assert isinstance(embed_context["F"]().get_bash_history(), LazyChain)
 
     embed_state = embed_context["Ex"].root_state
     assert isinstance(embed_state, State)
@@ -219,8 +230,8 @@ def test_get_embed_chain_constructors(state, dummy_checks):
     EmbedEx, EmbedF = get_embed_chain_constructors("proto", Ex())
 
     # Then
-    assert isinstance(EmbedEx(), Chain)
-    assert isinstance(EmbedF(), Chain)
+    assert isinstance(EmbedEx(), EagerChain)
+    assert isinstance(EmbedF(), LazyChain)
 
 
 def test_state_linking_root_creator(state):
