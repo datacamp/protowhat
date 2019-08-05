@@ -45,17 +45,10 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
 
 
 class Chain:
-    def __init__(self, state: Union[State, None], attr_scts=None):
-        self._state = state
+    def __init__(self, attr_scts=None):
         self._crnt_sct = None
         self._waiting_on_call = False
         self._attr_scts = {} if attr_scts is None else attr_scts
-
-    def _double_attr_error(self):
-        raise AttributeError(
-            "Did you forget to call a statement? "
-            "e.g. Ex().check_list_comp.check_body()"
-        )
 
     def __getattr__(self, attr):
         # Enable fast attribute access
@@ -68,18 +61,16 @@ class Chain:
             self._double_attr_error()
         else:
             # make a copy to return,
-            # in case someone does: chain = chain_of_checks; chain.a; chain.b
+            # in case someone does: a = chain.a; b = chain.b
             return self._sct_copy(attr_scts[attr])
 
     def __call__(self, *args, **kwargs):
-        self._state = link_to_state(self._crnt_sct)(self._state, *args, **kwargs)
-        self._waiting_on_call = False
-        return self
+        raise NotImplementedError
 
     def __rshift__(self, f):
         if self._waiting_on_call:
             self._double_attr_error()
-        elif isinstance(f, Chain) and not isinstance(f, LazyChain):
+        elif isinstance(f, EagerChain):
             raise BaseException(
                 "did you use a result of the Ex() function on the right hand side of the >> operator?"
             )
@@ -87,9 +78,12 @@ class Chain:
             raise BaseException(
                 "right hand side of >> operator should be an SCT, so must be callable!"
             )
-        else:
-            chain = self._sct_copy(f)
-            return chain()
+
+    def _double_attr_error(self):
+        raise AttributeError(
+            "Did you forget to call a statement? "
+            "e.g. Ex().check_list_comp.check_body()"
+        )
 
     def _sct_copy(self, f):
         chain = copy.copy(self)
@@ -97,17 +91,26 @@ class Chain:
         chain._waiting_on_call = True
         return chain
 
+    @classmethod
+    def _from_func(cls, f, *args, _attr_scts=None, **kwargs):
+        """Creates a function chain starting with the specified SCT (f), and its arguments."""
+        func_chain = cls(attr_scts=_attr_scts)
+        func_chain._stack.append([f, args, kwargs])
+        return func_chain
+
 
 class LazyChain(Chain):
-    def __init__(self, stack=None, attr_scts=None):
-        super().__init__(None, attr_scts)
-        self._stack = [] if stack is None else stack
+    def __init__(self, attr_scts=None):
+        super().__init__(attr_scts=attr_scts)
+        self._stack = []
 
     def __call__(self, *args, **kwargs):
         if self._crnt_sct:
             # calling an SCT function (after attribute access)
             call_data = (self._crnt_sct, args, kwargs)
-            return self.__class__(self._stack + [call_data], self._attr_scts)
+            new_link = self.__class__(self._attr_scts)
+            new_link._stack = self._stack + [call_data]
+            return new_link
         else:
             # running the chain
             state = kwargs.get("state") or args[0]
@@ -115,16 +118,30 @@ class LazyChain(Chain):
                 lambda s, cd: self._call_from_data(s, *cd), self._stack, state
             )
 
+    def __rshift__(self, f):
+        super().__rshift__(f)
+        chain = self._sct_copy(f)
+        return chain()
+
     @staticmethod
     def _call_from_data(state, f, args, kwargs):
         return link_to_state(f)(state, *args, **kwargs)
 
-    @classmethod
-    def _from_func(cls, f, *args, _attr_scts=None, **kwargs):
-        """Creates a function chain starting with the specified SCT (f), and its arguments."""
-        func_chain = cls(attr_scts=_attr_scts)
-        func_chain._stack.append([f, args, kwargs])
-        return func_chain
+
+class EagerChain(Chain):
+    def __init__(self, state: Union[State, None], attr_scts=None):
+        super().__init__(attr_scts=attr_scts)
+        self._state = state
+
+    def __call__(self, *args, **kwargs):
+        self._state = link_to_state(self._crnt_sct)(self._state, *args, **kwargs)
+        self._waiting_on_call = False
+        return self
+
+    def __rshift__(self, f):
+        super().__rshift__(f)
+        chain = self._sct_copy(f)
+        return chain()
 
 
 class ExGen:
@@ -162,7 +179,7 @@ class ExGen:
         if state is None and self.root_state is None:
             raise Exception("explicitly pass state to Ex, or set Ex.root_state")
 
-        return Chain(state or self.root_state, attr_scts=self.attr_scts)
+        return EagerChain(state or self.root_state, attr_scts=self.attr_scts)
 
 
 Ex = ExGen(None, {})

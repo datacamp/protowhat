@@ -8,7 +8,7 @@ from protowhat.sct_syntax import (
     state_dec_gen,
     get_checks_dict,
     create_sct_context,
-    Chain,
+    EagerChain,
     LazyChain,
 )
 
@@ -82,7 +82,11 @@ def ex():
 
 
 def test_ex_add_f(ex, f):
-    (ex >> f)._state = "statexb"
+    assert (ex >> f)._state == "statexb"
+
+
+def test_f_add_f(ex, f, f2):
+    assert (ex >> (f >> f2))._state == "statexbc"
 
 
 def test_ex_add_unary(ex):
@@ -135,7 +139,9 @@ def test_sct_context_creation(state, dummy_checks):
 
     for chain in ["Ex", "F"]:
         assert chain in sct_ctx
-        assert isinstance(sct_ctx[chain](state), Chain)
+
+    assert isinstance(sct_ctx["Ex"](state), EagerChain)
+    assert isinstance(sct_ctx["F"]()(state), State)
 
 
 def test_state_linking_root_creator(state):
