@@ -155,8 +155,8 @@ def test_missing_check_dir(state):
 
 
 def test_check_file_fchain(state, temp_file):
-    f = LazyChain(attr_scts={"check_file": cf.check_file})
-    Ex(state) >> f.check_file(temp_file.name)
+    LazyChain.register_scts({"check_file": cf.check_file})
+    Ex(state) >> LazyChain().check_file(temp_file.name)
 
 
 def test_load_file(state, temp_file):
