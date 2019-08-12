@@ -1,15 +1,16 @@
 import inspect
-import copy
 import builtins
 from contextlib import contextmanager
-from functools import wraps, reduce, partial
-from typing import Union, Type, Callable, Dict, Any
+from functools import wraps, reduce
+from typing import Type, Callable, Dict, Any, Optional
 
 from protowhat.Reporter import Reporter
 from protowhat.State import State
 
 
 def state_dec_gen(state_cls: Type[State], attr_scts):
+    Chain.register_scts(attr_scts)  # todo
+
     def state_dec(f):
         """Decorate check_* functions to return F chain if no state passed"""
 
@@ -19,7 +20,7 @@ def state_dec_gen(state_cls: Type[State], attr_scts):
             if isinstance(state, state_cls):
                 return f(*args, **kwargs)
             else:
-                return LazyChain._from_func(f, *args, _attr_scts=attr_scts, **kwargs)
+                return LazyChain._from_func(f, args, kwargs)
 
         return wrapper
 
@@ -44,33 +45,43 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
     return wrapper
 
 
+def to_sct_call(f: Callable):
+    return f, [], {}
+
+
 class Chain:
-    def __init__(self, attr_scts=None):
-        self._crnt_sct = None
-        self._waiting_on_call = False
-        self._attr_scts = {} if attr_scts is None else attr_scts
+    registered_scts = {}
+
+    def __init__(self, sct_call=None, previous: "Chain" = None):
+        self.sct_call = sct_call
+        self.previous = previous
+        self.next = []
+
+        if self.previous:
+            previous.next.append(self)
+
+    @classmethod
+    def register_scts(cls, scts: Dict[str, Callable]):
+        # todo: check for overrides?
+        # this updates the attribute on Chain
+        # registering through subclasses updates Chain
+        cls.registered_scts.update(scts)
 
     def __getattr__(self, attr):
-        # Enable fast attribute access
-        if attr == "_attr_scts":
-            raise AttributeError("Prevent getattr recursion on copy")
-        attr_scts = self._attr_scts
-        if attr not in attr_scts:
-            raise AttributeError("No SCT named %s" % attr)
-        elif self._waiting_on_call:
-            self._double_attr_error()
+        # if attr == "registered_scts":
+        #     # Enable fast attribute access (todo?)
+        #     raise AttributeError("Prevent getattr recursion on copy")
+        registered_scts = self.registered_scts
+        if attr not in registered_scts:
+            if attr not in ("_history",):  # todo
+                raise AttributeError("No SCT named %s" % attr)
+            return self.__getattribute__(attr)
         else:
-            # make a copy to return,
-            # in case someone does: a = chain.a; b = chain.b
-            return self._sct_copy(attr_scts[attr])
+            # in case someone does: a = chain.a; a(...); a(...)
+            return ChainExtender(self, registered_scts[attr])
 
-    def __call__(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def __rshift__(self, f):
-        if self._waiting_on_call:
-            self._double_attr_error()
-        elif isinstance(f, EagerChain):
+    def __rshift__(self, f: "LazyChain"):
+        if isinstance(f, EagerChain):
             raise BaseException(
                 "did you use a result of the Ex() function on the right hand side of the >> operator?"
             )
@@ -79,75 +90,107 @@ class Chain:
                 "right hand side of >> operator should be an SCT, so must be callable!"
             )
 
-    def _double_attr_error(self):
-        raise AttributeError(
-            "Did you forget to call a statement? "
-            "e.g. Ex().check_list_comp.check_body()"
-        )
+        # wrapping the lazy chain makes it possible to reuse lazy chains
+        # while still keeping a unique upstream chain (needed to execute lazy chains)
+        return type(self)(to_sct_call(f), self)
 
-    def _sct_copy(self, f):
-        chain = copy.copy(self)
-        chain._crnt_sct = f
-        chain._waiting_on_call = True
-        return chain
-
-    @classmethod
-    def _from_func(cls, f, *args, _attr_scts=None, **kwargs):
-        """Creates a function chain starting with the specified SCT (f), and its arguments."""
-        func_chain = cls(attr_scts=_attr_scts)
-        func_chain._stack.append([f, args, kwargs])
-        return func_chain
-
-
-class LazyChain(Chain):
-    def __init__(self, attr_scts=None):
-        super().__init__(attr_scts=attr_scts)
-        self._stack = []
-
-    def __call__(self, *args, **kwargs):
-        if self._crnt_sct:
-            # calling an SCT function (after attribute access)
-            call_data = (self._crnt_sct, args, kwargs)
-            new_link = self.__class__(self._attr_scts)
-            new_link._stack = self._stack + [call_data]
-            return new_link
-        else:
-            # running the chain
-            state = kwargs.get("state") or args[0]
-            return reduce(
-                lambda s, cd: self._call_from_data(s, *cd), self._stack, state
-            )
-
-    def __rshift__(self, f):
-        super().__rshift__(f)
-        chain = self._sct_copy(f)
-        return chain()
+    def __call__(self, *args, **kwargs) -> State:
+        raise NotImplementedError
 
     @staticmethod
     def _call_from_data(state, f, args, kwargs):
         return link_to_state(f)(state, *args, **kwargs)
 
+    @classmethod
+    def _from_func(
+        cls, func, args: Optional[tuple] = None, kwargs: Optional[dict] = None
+    ):
+        """Creates a function chain starting with the specified SCT (f), and its arguments."""
+        return cls((func, args or [], kwargs or {}))
+
+    @property
+    def _history(self) -> list:
+        if not self.sct_call:
+            return []
+
+        history = [self]
+        previous = history[-1].previous
+        while previous is not None and getattr(previous, "sct_call", None):
+            history.append(previous)
+            previous = history[-1].previous
+
+        return list(reversed(list(map(lambda chain: chain.sct_call, history))))
+
+
+class LazyChain(Chain):
+    def __call__(self, *args, **kwargs) -> State:
+        # running the chain
+        state = kwargs.get("state") or args[0]
+        return reduce(
+            lambda s, sct_call: self._call_from_data(s, *sct_call), self._history, state
+        )
+
 
 class EagerChain(Chain):
-    def __init__(self, state: Union[State, None], attr_scts=None):
-        super().__init__(attr_scts=attr_scts)
-        self._state = state
+    def __init__(
+        self,
+        sct_call=None,
+        previous: Optional["EagerChain"] = None,
+        state: Optional[State] = None,
+    ):
+        super().__init__(sct_call, previous)
+        if not sct_call and previous:
+            raise ValueError("After the start of a chain a call is required")
+        if (previous is None) is (state is None):
+            raise ValueError(
+                "State should be set at the start. "
+                "After that a reference to the previous part of the chain is needed."
+            )
 
-    def __call__(self, *args, **kwargs):
-        self._state = link_to_state(self._crnt_sct)(self._state, *args, **kwargs)
-        self._waiting_on_call = False
-        return self
+        if sct_call:
+            if previous:
+                state = previous._state
+            self._state = self._call_from_data(state, *sct_call)
+        else:
+            self._state = state
 
-    def __rshift__(self, f):
-        super().__rshift__(f)
-        chain = self._sct_copy(f)
-        return chain()
+    def __call__(self, *args, **kwargs) -> State:
+        # use same __call__ as LazyChain to allow reexecution?
+        raise RuntimeError("Chain already executed")
+        # return self._state
+
+
+class ChainExtender:
+    """
+    This handles branching off (multiple next)
+    either from a Chain or a chain attribute
+    """
+
+    def __init__(self, chain: Chain, sct: Callable):
+        self.chain = chain
+        self.sct = sct
+
+    def __call__(self, *args, **kwargs) -> Chain:
+        return type(self.chain)((self.sct, args, kwargs), previous=self.chain)
+
+    def __getattr__(self, item):
+        self.invalid_next_step(item)
+
+    def __rshift__(self, other):
+        self.invalid_next_step(other)
+
+    def invalid_next_step(self, next_step):
+        raise AttributeError(
+            "Expected a call of {} before {}. ".format(
+                getattr(self.sct, "__name__", repr(self.sct)), next_step
+            )
+        )
 
 
 class ExGen:
     def __init__(self, root_state, attr_scts):
         self.root_state = root_state
-        self.attr_scts = attr_scts
+        self.attr_scts = attr_scts  # todo
 
     def __call__(self, state=None):
         """Returns the current code state as a Chain instance.
@@ -179,7 +222,9 @@ class ExGen:
         if state is None and self.root_state is None:
             raise Exception("explicitly pass state to Ex, or set Ex.root_state")
 
-        return EagerChain(state or self.root_state, attr_scts=self.attr_scts)
+        Chain.register_scts(self.attr_scts)
+
+        return EagerChain(None, state=state or self.root_state)
 
 
 Ex = ExGen(None, {})
@@ -214,7 +259,7 @@ def create_sct_context(state_cls: Type[State], sct_dict, root_state=None):
         **sct_ctx,
         "state_dec": state_dec,  # needed by ext packages
         "Ex": ExGen(root_state, sct_ctx),
-        "F": partial(LazyChain, attr_scts=sct_ctx),
+        "F": LazyChain,
     }
 
     return ctx
