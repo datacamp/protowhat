@@ -96,7 +96,10 @@ def test_ex_add_f_add_f(ex, f, f2):
 
 
 def test_ex_add_unary(ex):
-    assert (ex >> (lambda state: state + "b"))._state == "statexb"
+    chain = ex >> (lambda state: state + "b")
+    assert isinstance(chain, EagerChain)
+    assert chain._state == "statexb"
+    assert chain("rerun") == "rerunxb"
 
 
 def test_ex_add_ex_err(ex):

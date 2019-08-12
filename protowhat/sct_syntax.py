@@ -69,9 +69,6 @@ class Chain:
         cls.registered_scts.update(scts)
 
     def __getattr__(self, attr):
-        # if attr == "registered_scts":
-        #     # Enable fast attribute access (todo?)
-        #     raise AttributeError("Prevent getattr recursion on copy")
         registered_scts = self.registered_scts
         if attr not in registered_scts:
             if attr not in ("_history",):  # todo
@@ -92,11 +89,15 @@ class Chain:
             )
 
         # wrapping the lazy chain makes it possible to reuse lazy chains
-        # while still keeping a unique upstream chain (needed to execute lazy chains)
+        # while still keeping a unique upstream chain (needed to lazily execute chains)
         return type(self)(to_sct_call(f), self)
 
     def __call__(self, *args, **kwargs) -> State:
-        raise NotImplementedError
+        # running the chain (multiple runs possible)
+        state = kwargs.get("state") or args[0]
+        return reduce(
+            lambda s, sct_call: self._call_from_data(s, *sct_call), self._history, state
+        )
 
     @staticmethod
     def _call_from_data(state, f, args, kwargs):
@@ -124,12 +125,11 @@ class Chain:
 
 
 class LazyChain(Chain):
-    def __call__(self, *args, **kwargs) -> State:
-        # running the chain
-        state = kwargs.get("state") or args[0]
-        return reduce(
-            lambda s, sct_call: self._call_from_data(s, *sct_call), self._history, state
-        )
+    """
+    This is an alias for Chain
+    It is useful to refer to 'pure' chains in instance checks and type hints
+    """
+    pass
 
 
 class EagerChain(Chain):
@@ -154,11 +154,6 @@ class EagerChain(Chain):
             self._state = self._call_from_data(state, *sct_call)
         else:
             self._state = state
-
-    def __call__(self, *args, **kwargs) -> State:
-        # use same __call__ as LazyChain to allow reexecution?
-        raise RuntimeError("Chain already executed")
-        # return self._state
 
 
 class ChainExtender:
