@@ -11,9 +11,9 @@ dummy_checks = pytest.fixture(dummy_checks)
 
 def test_debug(state, dummy_checks):
     state.do_test(Success("msg"))
-    Ex = ExGen(state, dummy_checks)
+    Ex = ExGen(state, {"_debug": _debug, **dummy_checks})
     try:
-        Ex().noop().child_state() >> LazyChain(attr_scts={"_debug": _debug})._debug(
+        Ex().noop().child_state() >> LazyChain()._debug(
             "breakpoint name"
         )
         assert False
