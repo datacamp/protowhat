@@ -13,7 +13,7 @@ from protowhat.selectors import Dispatcher
 from protowhat.State import State
 from protowhat.Reporter import Reporter
 
-from protowhat.sct_syntax import LazyChain, Ex
+from protowhat.sct_syntax import LazyChain, ExGen
 from protowhat.checks import check_files as cf
 from protowhat.checks.check_funcs import check_node, has_code
 
@@ -21,6 +21,8 @@ from protowhat.checks.check_funcs import check_node, has_code
 #  this is a holdover from the sql ast modules
 ast.Expr._priority = 0
 DUMMY_NODES = {"Expr": ast.Expr}
+
+Ex = ExGen(None)
 
 
 class ParseHey:
