@@ -4,7 +4,6 @@ from tests.helper import state, dummy_checks
 from protowhat.State import State
 from protowhat.sct_syntax import (
     ExGen,
-    Ex,
     state_dec_gen,
     get_checks_dict,
     create_sct_context,
@@ -13,10 +12,12 @@ from protowhat.sct_syntax import (
     ChainExtender,
 )
 
+Ex = ExGen(None)
+state_dec = state_dec_gen(State)
+
 state = pytest.fixture(state)
 dummy_checks = pytest.fixture(dummy_checks)
 
-state_dec = state_dec_gen(State, {})
 
 
 @pytest.fixture
@@ -160,7 +161,8 @@ def test_state_linking_root_creator_noop(state, dummy_checks):
     def diagnose(end_state):
         assert end_state.creator is None
 
-    TestEx = ExGen(state, {"diagnose": diagnose, **dummy_checks})
+    LazyChain.register_scts({"diagnose": diagnose, **dummy_checks})
+    TestEx = ExGen(state)
     TestEx().noop() >> LazyChain().diagnose()
 
 
@@ -172,5 +174,6 @@ def test_state_linking_root_creator_child_state(state, dummy_checks):
         assert state == end_state.state_history[0]
         assert end_state == end_state.state_history[1]
 
-    TestEx = ExGen(state, {"diagnose": diagnose, **dummy_checks})
+    LazyChain.register_scts({"diagnose": diagnose, **dummy_checks})
+    TestEx = ExGen(state)
     TestEx().child_state() >> LazyChain().diagnose()

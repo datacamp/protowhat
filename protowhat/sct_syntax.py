@@ -8,9 +8,7 @@ from protowhat.Reporter import Reporter
 from protowhat.State import State
 
 
-def state_dec_gen(state_cls: Type[State], attr_scts):
-    Chain.register_scts(attr_scts)  # todo
-
+def state_dec_gen(state_cls: Type[State]):
     def state_dec(f):
         """Decorate check_* functions to return F chain if no state passed"""
 
@@ -99,13 +97,13 @@ class Chain:
         )
 
     @staticmethod
-    def _call_from_data(state, f, args, kwargs):
+    def _call_from_data(state, f, args, kwargs) -> State:
         return link_to_state(f)(state, *args, **kwargs)
 
     @classmethod
     def _from_func(
         cls, func, args: Optional[tuple] = None, kwargs: Optional[dict] = None
-    ):
+    ) -> "Chain":
         """Creates a function chain starting with the specified SCT (f), and its arguments."""
         return cls((func, args or [], kwargs or {}))
 
@@ -183,12 +181,11 @@ class ChainExtender:
 
 
 class ExGen:
-    def __init__(self, root_state, attr_scts):
+    def __init__(self, root_state):
         self.root_state = root_state
-        self.attr_scts = attr_scts  # todo
 
     def __call__(self, state=None):
-        """Returns the current code state as a Chain instance.
+        """Returns the current code state as an EagerChain instance.
 
         This allows SCTs to be run without including their 1st argument, ``state``.
 
@@ -217,12 +214,7 @@ class ExGen:
         if state is None and self.root_state is None:
             raise Exception("explicitly pass state to Ex, or set Ex.root_state")
 
-        Chain.register_scts(self.attr_scts)
-
         return EagerChain(None, state=state or self.root_state)
-
-
-Ex = ExGen(None, {})
 
 
 def get_checks_dict(checks_module):
@@ -247,13 +239,14 @@ def create_sct_context(state_cls: Type[State], sct_dict, root_state=None):
     Returns:
         dict: the globals available to the SCT code
     """
-    state_dec = state_dec_gen(state_cls, sct_dict)
+    state_dec = state_dec_gen(state_cls)
+    LazyChain.register_scts(sct_dict)
     sct_ctx = {k: state_dec(v) for k, v in sct_dict.items()}
 
     ctx = {
         **sct_ctx,
         "state_dec": state_dec,  # needed by ext packages
-        "Ex": ExGen(root_state, sct_ctx),
+        "Ex": ExGen(root_state),
         "F": LazyChain,
     }
 
