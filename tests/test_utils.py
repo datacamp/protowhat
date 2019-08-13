@@ -16,7 +16,8 @@ dummy_checks = pytest.fixture(dummy_checks)
 
 def test_debug(state, dummy_checks):
     state.do_test(Success("msg"))
-    Ex = ExGen(state, {"_debug": _debug, **dummy_checks})
+    LazyChain.register_scts({"_debug": _debug, **dummy_checks})
+    Ex = ExGen(state)
     try:
         Ex().noop().child_state() >> LazyChain()._debug(
             "breakpoint name"
@@ -30,7 +31,8 @@ def test_debug(state, dummy_checks):
 
 
 def test_delayed_debug(state, dummy_checks):
-    Ex = ExGen(state, {"_debug": _debug, **dummy_checks})
+    LazyChain.register_scts({"_debug": _debug, **dummy_checks})
+    Ex = ExGen(state)
     try:
         Ex()._debug("breakpoint name", on_error=True).noop().child_state().fail()
         assert False
@@ -41,7 +43,8 @@ def test_delayed_debug(state, dummy_checks):
 
 
 def test_final_debug(state, dummy_checks):
-    Ex = ExGen(state, {"_debug": _debug, **dummy_checks})
+    LazyChain.register_scts({"_debug": _debug, **dummy_checks})
+    Ex = ExGen(state)
     Ex()._debug("breakpoint name", on_error=True).noop().child_state()
     assert state.reporter.fail
 
