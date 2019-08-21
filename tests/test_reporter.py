@@ -131,3 +131,24 @@ def test_highlighting_path():
     }
 
     assert payload == expected_payload
+
+
+def test_highlighting_path_no_position():
+    r = Reporter()
+
+    class FeedbackState:
+        highlighting_disabled = False
+        highlight = Highlight(None)
+        path = Path("test.py")
+
+    f = Feedback("msg", FeedbackState())
+
+    payload = r.build_failed_payload(f)
+
+    expected_payload = {
+        "correct": False,
+        "message": "msg",
+        "path": "test.py",
+    }
+
+    assert payload == expected_payload

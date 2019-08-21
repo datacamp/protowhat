@@ -1,3 +1,6 @@
+from typing import Dict
+
+
 class Feedback:
     def __init__(self, message, state=None):
         self.message = message
@@ -10,16 +13,17 @@ class Feedback:
             if hasattr(state, "path"):
                 self.path = state.path
 
-    def _highlight_data(self):
+    def _highlight_data(self) -> Dict[str, int]:
         highlight = {}
         if self.path:
             highlight["path"] = self.path
 
         if hasattr(self.highlight, "get_position"):
-            highlight.update(self.highlight.get_position())
-            return highlight
-        elif hasattr(self.highlight, "first_token") and hasattr(
-            self.highlight, "last_token"
+            position = self.highlight.get_position()
+            if position:
+                highlight.update(position)
+        elif getattr(self.highlight, "first_token", None) and getattr(
+            self.highlight, "last_token", None
         ):
             # used by pythonwhat
             # a plugin+register system would be better
@@ -32,9 +36,10 @@ class Feedback:
                     "column_end": self.highlight.last_token.end[1],
                 }
             )
-            return highlight
 
-    def get_highlight_data(self):
+        return highlight
+
+    def get_highlight_data(self) -> Dict[str, int]:
         result = None
         if self.highlight is not None and not self.highlighting_disabled:
             result = self._highlight_data()
