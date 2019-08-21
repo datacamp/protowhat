@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.11.1
+
+- Handle highlight position absence (in combination with `antlr-ast` v0.7.0)
+
 ## 1.11.0
 
 - Add bash history SCTs
