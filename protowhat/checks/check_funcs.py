@@ -214,7 +214,7 @@ def has_code(
         if isinstance(ast, ParseError):
             return code
         try:
-            return ast.get_text(code)
+            return ast.get_text(code) or ""
         except:
             return code
 
