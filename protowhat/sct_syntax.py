@@ -44,15 +44,18 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
     return wrapper
 
 
-def to_sct_call(f: Callable):
+Call = Tuple[Callable, list, dict]
+
+
+def to_call(f: Callable) -> Call:
     return f, [], {}
 
 
 class Chain:
     registered_scts = {}
 
-    def __init__(self, sct_call=None, previous: "Chain" = None):
-        self.sct_call = sct_call
+    def __init__(self, call: Optional[Call] = None, previous: Optional["Chain"] = None):
+        self.call = call
         self.previous = previous
         self.next = []
 
@@ -76,7 +79,7 @@ class Chain:
             # in case someone does: a = chain.a; a(...); a(...)
             return ChainExtender(self, registered_scts[attr])
 
-    def __rshift__(self, f: "LazyChain"):
+    def __rshift__(self, f: "LazyChain") -> "Chain":
         if isinstance(f, EagerChain):
             raise BaseException(
                 "did you use a result of the Ex() function on the right hand side of the >> operator?"
@@ -88,38 +91,31 @@ class Chain:
 
         # wrapping the lazy chain makes it possible to reuse lazy chains
         # while still keeping a unique upstream chain (needed to lazily execute chains)
-        return type(self)(to_sct_call(f), self)
+        return type(self)(to_call(f), self)
 
     def __call__(self, *args, **kwargs) -> State:
         # running the chain (multiple runs possible)
         state = kwargs.get("state") or args[0]
         return reduce(
-            lambda s, sct_call: self._call_from_data(s, *sct_call), self._history, state
+            lambda s, call: self._call_from_data(s, *call),
+            (chain.call for chain in self._history if chain.call is not None),
+            state,
         )
 
     @staticmethod
-    def _call_from_data(state, f, args, kwargs) -> State:
+    def _call_from_data(state, f: Callable, args: list, kwargs: dict) -> State:
         return link_to_state(f)(state, *args, **kwargs)
 
     @classmethod
     def _from_func(
-        cls, func, args: Optional[tuple] = None, kwargs: Optional[dict] = None
+        cls, func: Callable, args: Optional[tuple] = None, kwargs: Optional[dict] = None
     ) -> "Chain":
-        """Creates a function chain starting with the specified SCT (f), and its arguments."""
+        """Creates a function chain starting with the specified function and its arguments."""
         return cls((func, args or [], kwargs or {}))
 
     @property
     def _history(self) -> list:
-        if not self.sct_call:
-            return []
-
-        history = [self]
-        previous = history[-1].previous
-        while previous is not None and getattr(previous, "sct_call", None):
-            history.append(previous)
-            previous = history[-1].previous
-
-        return list(reversed(list(map(lambda chain: chain.sct_call, history))))
+        return getattr(self.previous, "_history", []) + [self]
 
 
 class LazyChain(Chain):
@@ -127,18 +123,19 @@ class LazyChain(Chain):
     This is an alias for Chain
     It is useful to refer to 'pure' chains in instance checks and type hints
     """
+
     pass
 
 
 class EagerChain(Chain):
     def __init__(
         self,
-        sct_call=None,
+        call: Optional[Call] = None,
         previous: Optional["EagerChain"] = None,
         state: Optional[State] = None,
     ):
-        super().__init__(sct_call, previous)
-        if not sct_call and previous:
+        super().__init__(call, previous)
+        if not call and previous:
             raise ValueError("After the start of a chain a call is required")
         if (previous is None) is (state is None):
             raise ValueError(
@@ -146,10 +143,10 @@ class EagerChain(Chain):
                 "After that a reference to the previous part of the chain is needed."
             )
 
-        if sct_call:
+        if call:
             if previous:
                 state = previous._state
-            self._state = self._call_from_data(state, *sct_call)
+            self._state = self._call_from_data(state, *call)
         else:
             self._state = state
 
@@ -160,12 +157,12 @@ class ChainExtender:
     either from a Chain or a chain attribute
     """
 
-    def __init__(self, chain: Chain, sct: Callable):
+    def __init__(self, chain: Chain, function: Callable):
         self.chain = chain
-        self.sct = sct
+        self.function = function
 
     def __call__(self, *args, **kwargs) -> Chain:
-        return type(self.chain)((self.sct, args, kwargs), previous=self.chain)
+        return type(self.chain)((self.function, args, kwargs), previous=self.chain)
 
     def __getattr__(self, item):
         self.invalid_next_step(item)
@@ -173,10 +170,10 @@ class ChainExtender:
     def __rshift__(self, other):
         self.invalid_next_step(other)
 
-    def invalid_next_step(self, next_step):
+    def invalid_next_step(self, next_step: str):
         raise AttributeError(
             "Expected a call of {} before {}. ".format(
-                getattr(self.sct, "__name__", repr(self.sct)), next_step
+                getattr(self.function, "__name__", repr(self.function)), next_step
             )
         )
 
@@ -185,7 +182,7 @@ class ExGen:
     def __init__(self, root_state):
         self.root_state = root_state
 
-    def __call__(self, state=None):
+    def __call__(self, state=None) -> EagerChain:
         """Returns the current code state as an EagerChain instance.
 
         This allows SCTs to be run without including their 1st argument, ``state``.
@@ -309,7 +306,7 @@ def create_embed_state(
     return embed_state
 
 
-def create_embed_context(technology: str, context: Chain, **kwargs):
+def create_embed_context(technology: str, context: EagerChain, **kwargs):
     """
     Create the globals that will be available when running the checks for the embedded technology.
 
