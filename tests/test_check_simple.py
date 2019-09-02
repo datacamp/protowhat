@@ -41,14 +41,14 @@ def test_has_chosen_alone_fail():
 
 def test_has_chosen_chain_pass():
     state = prepare_state("selected_option = 1")
-    EagerChain.register_scts(sct_ctx)
+    EagerChain.register_functions(sct_ctx)
     EagerChain(state=state).has_chosen(1, ["good", "bad"])
     assert state.reporter.build_final_payload()["message"] == "good"
 
 
 def test_has_chosen_chain_fail():
     state = prepare_state("selected_option = 2")
-    EagerChain.register_scts(sct_ctx)
+    EagerChain.register_functions(sct_ctx)
     with pytest.raises(TF, match="bad"):
         EagerChain(state=state).has_chosen(1, ["good", "bad"])
 
@@ -64,7 +64,7 @@ def test_success_msg_pass():
 
 def test_success_msg_pass_ex():
     state = prepare_state("")
-    EagerChain.register_scts(sct_ctx)
+    EagerChain.register_functions(sct_ctx)
     EagerChain(state=state).success_msg("NEW SUCCESS MSG")
 
     sct_payload = state.reporter.build_final_payload()
@@ -75,7 +75,7 @@ def test_success_msg_pass_ex():
 def test_no_allow_errors():
     state = prepare_state("")
     state.reporter.errors = ["Error"]
-    EagerChain.register_scts(sct_ctx)
+    EagerChain.register_functions(sct_ctx)
     EagerChain(state=state).success_msg("Good")
     sct_payload = state.reporter.build_final_payload()
     assert sct_payload["correct"] is False
@@ -87,7 +87,7 @@ def test_no_allow_errors():
 def test_allow_errors():
     state = prepare_state("")
     state.reporter.errors = ["Error"]
-    EagerChain.register_scts(sct_ctx)
+    EagerChain.register_functions(sct_ctx)
     EagerChain(state=state).allow_errors().success_msg("Good")
     sct_payload = state.reporter.build_final_payload()
     assert sct_payload["correct"] is True
