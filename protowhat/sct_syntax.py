@@ -2,7 +2,7 @@ import inspect
 import builtins
 from functools import wraps, reduce
 from importlib import import_module
-from typing import Union, Type, Callable, Dict, Any, Tuple, Optional
+from typing import Union, Type, Tuple, Callable, Dict, Any, Optional
 
 from protowhat.Reporter import Reporter
 from protowhat.State import State
@@ -19,7 +19,7 @@ def state_dec_gen(state_cls: Type[State]):
             if isinstance(state, state_cls):
                 return f(*args, **kwargs)
             else:
-                return LazyChain._from_func(f, args, kwargs)
+                return LazyChain(ChainedCall(f, args, kwargs))
 
         return wrapper
 
@@ -44,18 +44,47 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
     return wrapper
 
 
-Call = Tuple[Callable, list, dict]
+class ChainedCall:
+    strict = False
+    __slots__ = ("callable", "args", "kwargs")
 
+    def __init__(
+        self,
+        callable_: Callable,
+        args: Optional[tuple] = None,
+        kwargs: Optional[dict] = None,
+    ):
+        """
+        Data for a function call that can be chained
+        This means the chain state should only be provided when calling.
+        """
+        if args is None:
+            args = ()
+        if kwargs is None:
+            kwargs = {}
 
-def to_call(f: Callable) -> Call:
-    return f, [], {}
+        self.callable = callable_
+        self.args = args
+        self.kwargs = kwargs
+        if self.strict:
+            self.validate()
+
+    def validate(self):
+        pass
+
+    def __call__(self, state: State) -> State:
+        return link_to_state(self.callable)(state, *self.args, **self.kwargs)
 
 
 class Chain:
-    registered_scts = {}
+    registered_functions = {}
 
-    def __init__(self, call: Optional[Call] = None, previous: Optional["Chain"] = None):
-        self.call = call
+    def __init__(
+        self,
+        chained_call: Optional[ChainedCall] = None,
+        previous: Optional["Chain"] = None,
+    ):
+        self.call = chained_call
         self.previous = previous
         self.next = []
 
@@ -63,21 +92,21 @@ class Chain:
             previous.next.append(self)
 
     @classmethod
-    def register_scts(cls, scts: Dict[str, Callable]):
+    def register_functions(cls, functions: Dict[str, Callable]):
         # todo: check for overrides?
         # this updates the attribute on Chain
         # registering through subclasses updates Chain
-        cls.registered_scts.update(scts)
+        cls.registered_functions.update(functions)
 
     def __getattr__(self, attr):
-        registered_scts = self.registered_scts
-        if attr not in registered_scts:
+        registered_functions = self.registered_functions
+        if attr not in registered_functions:
             if attr not in ("_history",):  # todo
-                raise AttributeError("No SCT named %s" % attr)
+                raise AttributeError("No function named %s" % attr)
             return self.__getattribute__(attr)
         else:
             # in case someone does: a = chain.a; a(...); a(...)
-            return ChainExtender(self, registered_scts[attr])
+            return ChainExtender(self, registered_functions[attr])
 
     def __rshift__(self, f: "LazyChain") -> "Chain":
         if isinstance(f, EagerChain):
@@ -86,32 +115,22 @@ class Chain:
             )
         elif not callable(f):
             raise BaseException(
-                "right hand side of >> operator should be an SCT, so must be callable!"
+                "right hand side of >> operator should be callable!"
             )
 
         # wrapping the lazy chain makes it possible to reuse lazy chains
         # while still keeping a unique upstream chain (needed to lazily execute chains)
-        return type(self)(to_call(f), self)
+        # during execution, the state provides access to the full upstream context for an invocation
+        return type(self)(ChainedCall(f), self)
 
     def __call__(self, *args, **kwargs) -> State:
         # running the chain (multiple runs possible)
         state = kwargs.get("state") or args[0]
         return reduce(
-            lambda s, call: self._call_from_data(s, *call),
+            lambda s, call: call(s),
             (chain.call for chain in self._history if chain.call is not None),
             state,
         )
-
-    @staticmethod
-    def _call_from_data(state, f: Callable, args: list, kwargs: dict) -> State:
-        return link_to_state(f)(state, *args, **kwargs)
-
-    @classmethod
-    def _from_func(
-        cls, func: Callable, args: Optional[tuple] = None, kwargs: Optional[dict] = None
-    ) -> "Chain":
-        """Creates a function chain starting with the specified function and its arguments."""
-        return cls((func, args or [], kwargs or {}))
 
     @property
     def _history(self) -> list:
@@ -130,12 +149,12 @@ class LazyChain(Chain):
 class EagerChain(Chain):
     def __init__(
         self,
-        call: Optional[Call] = None,
+        chained_call: Optional[ChainedCall] = None,
         previous: Optional["EagerChain"] = None,
         state: Optional[State] = None,
     ):
-        super().__init__(call, previous)
-        if not call and previous:
+        super().__init__(chained_call, previous)
+        if not chained_call and previous:
             raise ValueError("After the start of a chain a call is required")
         if (previous is None) is (state is None):
             raise ValueError(
@@ -143,10 +162,10 @@ class EagerChain(Chain):
                 "After that a reference to the previous part of the chain is needed."
             )
 
-        if call:
+        if chained_call:
             if previous:
                 state = previous._state
-            self._state = self._call_from_data(state, *call)
+            self._state = chained_call(state)
         else:
             self._state = state
 
@@ -162,7 +181,9 @@ class ChainExtender:
         self.function = function
 
     def __call__(self, *args, **kwargs) -> Chain:
-        return type(self.chain)((self.function, args, kwargs), previous=self.chain)
+        return type(self.chain)(
+            ChainedCall(self.function, args, kwargs), previous=self.chain
+        )
 
     def __getattr__(self, item):
         self.invalid_next_step(item)
@@ -240,7 +261,7 @@ def create_sct_context(
         dict: the globals available to the SCT code
     """
     state_dec = state_dec_gen(state_cls)
-    LazyChain.register_scts(sct_dict)
+    LazyChain.register_functions(sct_dict)
     sct_ctx = {k: state_dec(v) for k, v in sct_dict.items()}
 
     ctx = {
