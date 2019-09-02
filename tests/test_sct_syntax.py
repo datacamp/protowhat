@@ -10,6 +10,7 @@ from protowhat.sct_syntax import (
     EagerChain,
     LazyChain,
     ChainExtender,
+    ChainedCall,
 )
 
 Ex = ExGen(None)
@@ -19,7 +20,6 @@ state = pytest.fixture(state)
 dummy_checks = pytest.fixture(dummy_checks)
 
 
-
 @pytest.fixture
 def addx():
     return lambda state, x: state + x
@@ -27,12 +27,12 @@ def addx():
 
 @pytest.fixture
 def f():
-    return LazyChain._from_func(lambda state, b: state + b, kwargs={"b": "b"})
+    return LazyChain(ChainedCall(lambda state, b: state + b, kwargs={"b": "b"}))
 
 
 @pytest.fixture
 def f2():
-    return LazyChain._from_func(lambda state, c: state + c, kwargs={"c": "c"})
+    return LazyChain(ChainedCall(lambda state, c: state + c, kwargs={"c": "c"}))
 
 
 def test_f_from_func(f):
@@ -40,19 +40,22 @@ def test_f_from_func(f):
 
 
 def test_f_sct_copy_kw(addx):
-    assert LazyChain((addx, (), {"x": "x"}))("state") == "statex"
+    assert LazyChain(ChainedCall(addx, kwargs={"x": "x"}))("state") == "statex"
 
 
 def test_f_sct_copy_pos(addx):
-    assert LazyChain((addx, ("x",), {}))("state") == "statex"
+    assert LazyChain(ChainedCall(addx, ("x",)))("state") == "statex"
 
 
 def test_ex_sct_copy_kw(addx):
-    assert EagerChain((addx, (), {"x": "x"}), state="state")._state == "statex"
+    assert (
+        EagerChain(ChainedCall(addx, kwargs={"x": "x"}), state="state")._state
+        == "statex"
+    )
 
 
 def test_ex_sct_copy_pos(addx):
-    assert EagerChain((addx, ("x",), {}), state="state")._state == "statex"
+    assert EagerChain(ChainedCall(addx, ("x",)), state="state")._state == "statex"
 
 
 def test_f_2_funcs(f, addx):
@@ -153,7 +156,7 @@ def test_state_linking_root_creator(state):
     def diagnose(end_state):
         assert end_state.creator is None
 
-    LazyChain.register_scts({"diagnose": diagnose})
+    LazyChain.register_functions({"diagnose": diagnose})
     Ex(state) >> LazyChain().diagnose()
 
 
@@ -161,7 +164,7 @@ def test_state_linking_root_creator_noop(state, dummy_checks):
     def diagnose(end_state):
         assert end_state.creator is None
 
-    LazyChain.register_scts({"diagnose": diagnose, **dummy_checks})
+    LazyChain.register_functions({"diagnose": diagnose, **dummy_checks})
     TestEx = ExGen(state)
     TestEx().noop() >> LazyChain().diagnose()
 
@@ -174,6 +177,6 @@ def test_state_linking_root_creator_child_state(state, dummy_checks):
         assert state == end_state.state_history[0]
         assert end_state == end_state.state_history[1]
 
-    LazyChain.register_scts({"diagnose": diagnose, **dummy_checks})
+    LazyChain.register_functions({"diagnose": diagnose, **dummy_checks})
     TestEx = ExGen(state)
     TestEx().child_state() >> LazyChain().diagnose()
