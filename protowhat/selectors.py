@@ -4,6 +4,8 @@ from ast import NodeVisitor
 import inspect
 import importlib
 
+from protowhat.utils_messaging import get_ord
+
 
 class Selector(NodeVisitor):
     def __init__(self, target_cls, target_cls_name=None, strict=True, priority=None):
@@ -162,27 +164,3 @@ class Dispatcher(DispatcherInterface):
             }
         dispatcher = cls(mod.AstNode, nodes=ast_nodes, ast_mod=mod)
         return dispatcher
-
-
-def get_ord(num):
-    assert num > 0, "use strictly positive numbers in get_ord()"
-    nums = {
-        1: "first",
-        2: "second",
-        3: "third",
-        4: "fourth",
-        5: "fifth",
-        6: "sixth",
-        7: "seventh",
-        8: "eight",
-        9: "ninth",
-        10: "tenth",
-    }
-    if num in nums:
-        return nums[num]
-    else:
-        return (
-            {1: "{}st", 2: "{}nd", 3: "{}rd"}.get(
-                num if (num < 20) else (num % 10), "{}th"
-            )
-        ).format(num)
