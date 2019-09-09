@@ -2,6 +2,7 @@ import inspect
 import builtins
 from contextlib import contextmanager
 from functools import wraps, reduce
+from itertools import chain
 from typing import Type, Callable, Dict, Any, Optional
 
 from protowhat.Reporter import Reporter
@@ -43,6 +44,13 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
     return wrapper
 
 
+def to_string(arg) -> str:
+    if isinstance(arg, LazyChain):
+        return str(arg._history[0])
+    else:
+        return str(arg)
+
+
 class ChainedCall:
     strict = False
     __slots__ = ("callable", "args", "kwargs")
@@ -74,9 +82,31 @@ class ChainedCall:
     def __call__(self, state: State) -> State:
         return link_to_state(self.callable)(state, *self.args, **self.kwargs)
 
+    def __str__(self):
+        if isinstance(self.callable, LazyChain):
+            return str(self.callable._history[0])
+        else:
+            return (
+                self.callable.__name__
+                + "("
+                + ", ".join(
+                    chain(
+                        map(to_string, self.args),
+                        map(
+                            lambda kwarg, kwarg_value: "{}={}".format(
+                                kwarg, to_string(kwarg_value)
+                            ),
+                            self.kwargs.items(),
+                        ),
+                    )
+                )
+                + ")"
+            )
+
 
 class Chain:
     registered_functions = {}
+    empty_call_str = ""
 
     def __init__(
         self,
@@ -89,6 +119,10 @@ class Chain:
 
         if self.previous:
             previous.next.append(self)
+
+    @property
+    def _history(self) -> list:
+        return getattr(self.previous, "_history", []) + [self]
 
     @classmethod
     def register_functions(cls, functions: Dict[str, Callable]):
@@ -113,9 +147,7 @@ class Chain:
                 "did you use a result of the Ex() function on the right hand side of the >> operator?"
             )
         elif not callable(f):
-            raise BaseException(
-                "right hand side of >> operator should be callable!"
-            )
+            raise BaseException("right hand side of >> operator should be callable!")
 
         # wrapping the lazy chain makes it possible to reuse lazy chains
         # while still keeping a unique upstream chain (needed to lazily execute chains)
@@ -131,9 +163,21 @@ class Chain:
             state,
         )
 
-    @property
-    def _history(self) -> list:
-        return getattr(self.previous, "_history", []) + [self]
+    def __str__(self):
+        if self.call is None:
+            result = self.empty_call_str
+        else:
+            result = str(self.call)
+
+        if len(result) and len(self.next) > 0:
+            result += "."
+
+        if len(self.next) == 1:
+            result += str(self.next[0])
+        elif len(self.next) > 1:
+            result += "multi({})".format(", ".join(map(str, self.next)))
+
+        return result
 
 
 class LazyChain(Chain):
@@ -145,7 +189,13 @@ class LazyChain(Chain):
     pass
 
 
+class FakeEagerChain(LazyChain):
+    empty_call_str = "Ex()"
+
+
 class EagerChain(Chain):
+    empty_call_str = "Ex()"
+
     def __init__(
         self,
         chained_call: Optional[ChainedCall] = None,
@@ -198,8 +248,32 @@ class ChainExtender:
         )
 
 
-class ExGen:
+class ChainStart:
+    def __init__(self):
+        self.chain_roots = []
+
+    def __call__(self) -> Chain:
+        raise NotImplementedError()
+
+    def __str__(self):
+        return "\n".join(str(root) for root in self.chain_roots)
+
+
+class SimpleChainStart(ChainStart):
+    def __init__(self, chain_type: Type[Chain]):
+        super().__init__()
+        self.chain_type = chain_type
+
+    def __call__(self) -> Chain:
+        chain_root = self.chain_type(None)
+        self.chain_roots.append(chain_root)
+
+        return chain_root
+
+
+class ExGen(ChainStart):
     def __init__(self, root_state):
+        super().__init__()
         self.root_state = root_state
 
     def __call__(self, state=None) -> EagerChain:
@@ -232,7 +306,10 @@ class ExGen:
         if state is None and self.root_state is None:
             raise Exception("explicitly pass state to Ex, or set Ex.root_state")
 
-        return EagerChain(None, state=state or self.root_state)
+        chain_root = EagerChain(None, state=state or self.root_state)
+        self.chain_roots.append(chain_root)
+
+        return chain_root
 
 
 def get_checks_dict(checks_module):
