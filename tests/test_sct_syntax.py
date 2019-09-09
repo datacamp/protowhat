@@ -11,6 +11,8 @@ from protowhat.sct_syntax import (
     LazyChain,
     ChainExtender,
     ChainedCall,
+    SimpleChainStart,
+    FakeEagerChain,
     create_embed_state,
     create_embed_context,
     get_embed_chain_constructors,
@@ -270,3 +272,17 @@ def test_state_linking_root_creator_child_state(state, dummy_checks):
     LazyChain.register_functions({"diagnose": diagnose, **dummy_checks})
     TestEx = ExGen(state)
     TestEx().child_state() >> LazyChain().diagnose()
+
+
+def test_sct_reflection(dummy_checks):
+    def diagnose(state):
+        raise RuntimeError("This is not run")
+
+    LazyChain.register_functions({"diagnose": diagnose, **dummy_checks})
+    Ex = SimpleChainStart(FakeEagerChain)
+    chain_part_1 = Ex().noop().child_state()
+    chain = chain_part_1 >> LazyChain().diagnose().fail()
+    # assert str(chain) == "Ex().noop().child_state().diagnose().fail()"
+    # assert str(chain_part_1) == "Ex().noop().child_state()"
+    assert str(Ex.chain_roots[0]) == "Ex().noop().child_state().diagnose().fail()"
+    assert str(Ex) == "Ex().noop().child_state().diagnose().fail()"
