@@ -2,8 +2,8 @@ import inspect
 import builtins
 from functools import wraps, reduce
 from importlib import import_module
-from itertools import chain
-from typing import Union, Type, Tuple, Callable, Dict, Any, Optional
+from itertools import chain as chain_iters
+from typing import Type, Tuple, Callable, Dict, Any, Optional, List
 
 from protowhat.Reporter import Reporter
 from protowhat.State import State
@@ -88,7 +88,7 @@ class ChainedCall:
                 self.callable.__name__
                 + "("
                 + ", ".join(
-                    chain(
+                    chain_iters(
                         map(to_string, self.args),
                         map(
                             lambda kwarg, kwarg_value: "{}={}".format(
@@ -162,31 +162,9 @@ class Chain:
         )
 
     def __str__(self):
-        if self.call is None:
-            result = self.empty_call_str
-        elif (
-            self.previous is not None
-            and not len(self.next)
-            and not isinstance(self.call.callable, Chain)
-        ):
-            if not getattr(self, "stringification_throwback", False):
-                self.stringification_throwback = True
-                result = str(self._history[0])
-            else:
-                self.stringification_throwback = False
-                result = str(self.call)
-        else:
-            result = str(self.call)
-
-        if len(result) and len(self.next) > 0:
-            result += "."
-
-        if len(self.next) == 1:
-            result += str(self.next[0])
-        elif len(self.next) > 1:
-            result += "multi({})".format(", ".join(map(str, self.next)))
-
-        return result
+        return ".".join(
+            str(step.call) for step in self._history if step.call is not None
+        )
 
 
 class LazyChain(Chain):
@@ -199,8 +177,6 @@ class LazyChain(Chain):
 
 
 class EagerChain(Chain):
-    empty_call_str = "Ex()"
-
     def __init__(
         self,
         chained_call: Optional[ChainedCall] = None,
@@ -223,6 +199,22 @@ class EagerChain(Chain):
             self._state = chained_call(state)
         else:
             self._state = state
+
+    def __str__(self):
+        if self.call is None:
+            result = "Ex()"
+        else:
+            result = str(self.call)
+
+        if len(result) and len(self.next) > 0:
+            result += "."
+
+        if len(self.next) == 1:
+            result += str(self.next[0])
+        elif len(self.next) > 1:
+            result += "multi({})".format(", ".join(map(str, self.next)))
+
+        return result
 
 
 class ChainExtender:
@@ -254,6 +246,15 @@ class ChainExtender:
         )
 
 
+def get_chain_ends(chain: Chain) -> List[Chain]:
+    if chain.next:
+        return [*chain_iters(
+            *(get_chain_ends(branch) for branch in chain.next)
+        )]
+    else:
+        return [chain]
+
+
 class ChainStart:
     def __init__(self):
         self.chain_roots = []
@@ -261,26 +262,28 @@ class ChainStart:
     def __call__(self) -> Chain:
         raise NotImplementedError()
 
-    def __str__(self):
-        return "\n".join(str(root) for root in self.chain_roots)
 
-
-class SimpleChainStart(ChainStart):
-    def __init__(self, chain_type: Type[Chain]):
-        super().__init__()
-        self.chain_type = chain_type
-
-    def __call__(self) -> Chain:
-        chain_root = self.chain_type(None)
+class LazyChainStart(ChainStart):
+    def __call__(self) -> LazyChain:
+        chain_root = LazyChain(None)
         self.chain_roots.append(chain_root)
 
         return chain_root
 
+    def __str__(self):
+        return "\n".join(
+            str(chain_end)
+            for chain_end in chain_iters(
+                *(get_chain_ends(root) for root in self.chain_roots)
+            )
+        )
+
 
 class ExGen(ChainStart):
-    def __init__(self, root_state):
+    def __init__(self, root_state, strict=True):
         super().__init__()
         self.root_state = root_state
+        self.strict = strict
 
     def __call__(self, state=None) -> EagerChain:
         """Returns the current code state as an EagerChain instance.
@@ -309,13 +312,16 @@ class ExGen(ChainStart):
                 has_code(state, text="SELECT id")
 
         """
-        if state is None and self.root_state is None:
+        if self.strict and state is None and self.root_state is None:
             raise Exception("explicitly pass state to Ex, or set Ex.root_state")
 
         chain_root = EagerChain(None, state=state or self.root_state)
         self.chain_roots.append(chain_root)
 
         return chain_root
+
+    def __str__(self):
+        return "\n".join(str(root) for root in self.chain_roots)
 
 
 def get_checks_dict(checks_module) -> Dict[str, Callable]:
