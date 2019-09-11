@@ -46,10 +46,7 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
 
 
 def to_string(arg) -> str:
-    if isinstance(arg, LazyChain):
-        return str(arg._history[0])
-    else:
-        return str(arg)
+    return str(arg)
 
 
 class ChainedCall:
@@ -85,7 +82,7 @@ class ChainedCall:
 
     def __str__(self):
         if isinstance(self.callable, LazyChain):
-            return str(self.callable._history[0])
+            return str(self.callable)
         else:
             return (
                 self.callable.__name__
@@ -167,6 +164,17 @@ class Chain:
     def __str__(self):
         if self.call is None:
             result = self.empty_call_str
+        elif (
+            self.previous is not None
+            and not len(self.next)
+            and not isinstance(self.call.callable, Chain)
+        ):
+            if not getattr(self, "stringification_throwback", False):
+                self.stringification_throwback = True
+                result = str(self._history[0])
+            else:
+                self.stringification_throwback = False
+                result = str(self.call)
         else:
             result = str(self.call)
 
