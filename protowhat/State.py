@@ -95,11 +95,7 @@ class State:
 
     @property
     def state_history(self):
-        history = [self]
-        while history[-1].parent_state is not None:
-            history.append(history[-1].parent_state)
-
-        return list(reversed(history))
+        return getattr(self.parent_state, "state_history", []) + [self]
 
     def get_ast_path(self):
         rev_checks = filter(
