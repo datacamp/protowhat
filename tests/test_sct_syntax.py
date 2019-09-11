@@ -11,8 +11,7 @@ from protowhat.sct_syntax import (
     LazyChain,
     ChainExtender,
     ChainedCall,
-    SimpleChainStart,
-)
+    LazyChainStart)
 
 Ex = ExGen(None)
 state_dec = state_dec_gen(State)
@@ -188,10 +187,43 @@ def test_sct_reflection(dummy_checks):
         raise RuntimeError("This is not run")
 
     LazyChain.register_functions({"diagnose": diagnose, **dummy_checks})
-    Ex = SimpleChainStart(EagerChain)
+    Ex = ExGen(None, strict=False)
+
     chain_part_1 = Ex().noop().child_state()
-    chain = chain_part_1 >> LazyChain().diagnose().fail()
-    # assert str(chain) == "Ex().noop().child_state().diagnose().fail()"
-    # assert str(chain_part_1) == "Ex().noop().child_state()"
-    assert str(Ex.chain_roots[0]) == "Ex().noop().child_state().diagnose().fail()"
-    assert str(Ex) == "Ex().noop().child_state().diagnose().fail()"
+    assert str(chain_part_1) == "child_state()"
+
+    chain_part_2 = LazyChain().diagnose().fail()
+    assert str(chain_part_2) == "diagnose().fail()"
+
+    chain_part_3 = LazyChain().noop()
+    assert str(chain_part_3) == "noop()"
+
+    chain_part_2_and_3 = chain_part_2 >> chain_part_3
+    assert str(chain_part_2_and_3) == "diagnose().fail().noop()"
+
+    chain = chain_part_1 >> chain_part_2_and_3
+    assert str(chain) == str(chain_part_2_and_3)
+    assert str(chain_part_1) == "child_state().diagnose().fail().noop()"
+
+    assert str(Ex) == "Ex().noop().child_state().diagnose().fail().noop()"
+
+
+def test_sct_reflection_lazy(dummy_checks):
+    def diagnose(state):
+        raise RuntimeError("This is not run")
+
+    LazyChain.register_functions({"diagnose": diagnose, **dummy_checks})
+    Ex = LazyChainStart()
+
+    chain_part_1 = Ex().noop().child_state()
+    assert str(chain_part_1) == "noop().child_state()"
+
+    chain_part_2 = LazyChain().diagnose().fail()
+    assert str(chain_part_2) == "diagnose().fail()"
+
+    chain = chain_part_1 >> chain_part_2
+    assert str(chain) == "noop().child_state().diagnose().fail()"
+    assert str(chain_part_1) == "noop().child_state()"
+
+    assert str(Ex) == "noop().child_state().diagnose().fail()"
+    assert str(chain) == str(Ex)
