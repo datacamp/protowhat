@@ -12,7 +12,6 @@ from protowhat.sct_syntax import (
     ChainExtender,
     ChainedCall,
     SimpleChainStart,
-    FakeEagerChain,
 )
 
 Ex = ExGen(None)
@@ -189,7 +188,7 @@ def test_sct_reflection(dummy_checks):
         raise RuntimeError("This is not run")
 
     LazyChain.register_functions({"diagnose": diagnose, **dummy_checks})
-    Ex = SimpleChainStart(FakeEagerChain)
+    Ex = SimpleChainStart(EagerChain)
     chain_part_1 = Ex().noop().child_state()
     chain = chain_part_1 >> LazyChain().diagnose().fail()
     # assert str(chain) == "Ex().noop().child_state().diagnose().fail()"
