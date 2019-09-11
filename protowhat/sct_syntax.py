@@ -197,10 +197,6 @@ class LazyChain(Chain):
     pass
 
 
-class FakeEagerChain(LazyChain):
-    empty_call_str = "Ex()"
-
-
 class EagerChain(Chain):
     empty_call_str = "Ex()"
 
@@ -213,15 +209,16 @@ class EagerChain(Chain):
         super().__init__(chained_call, previous)
         if not chained_call and previous:
             raise ValueError("After the start of a chain a call is required")
-        if (previous is None) is (state is None):
+        if previous is not None and state is not None:
             raise ValueError(
                 "State should be set at the start. "
                 "After that a reference to the previous part of the chain is needed."
             )
 
-        if chained_call:
-            if previous:
-                state = previous._state
+        if previous:
+            state = previous._state
+
+        if state and chained_call:
             self._state = chained_call(state)
         else:
             self._state = state
