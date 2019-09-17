@@ -164,3 +164,88 @@ class Dispatcher(DispatcherInterface):
             }
         dispatcher = cls(mod.AstNode, nodes=ast_nodes, ast_mod=mod)
         return dispatcher
+
+
+# AST distance
+from ast import iter_fields, AST
+
+
+def iter_steps(node):
+    if isinstance(node, list):
+        return enumerate(node)
+    elif isinstance(node, AST):
+        return iter_fields(node)
+    else:
+        return []
+
+
+def replace_penalty(one, other):
+    # if int, lower penalty?
+    # include originating node in spec step? (in iter_steps)
+    return 1 if one != other else 0
+
+
+def is_goal(goal, node):
+    return isinstance(node, type(goal))
+
+
+def sort_key(result):
+    cost, steps, item = result
+    return cost
+
+
+def search(spec, goal, node, max_cost=None):
+
+    first_row = range(len(spec) + 1)
+
+    results = []
+
+    # recursively search each branch of the trie
+    for step, child in iter_steps(node):
+        search_recursive(child, [step], spec, goal, first_row, results, max_cost)
+
+    return results
+
+
+def search_recursive(node, steps, spec, goal, previous_row, results, max_cost):
+
+    columns = len(spec) + 1
+    current_row = [previous_row[0] + 1]
+
+    # Build one row for the step, with a column for each step in the target spec
+    # plus one for the empty string at column 0
+    for column in range(1, columns):
+
+        insert_cost = current_row[column - 1] + 1
+        delete_cost = previous_row[column] + 1
+        replace_cost = previous_row[column - 1] + replace_penalty(
+            spec[column - 1], steps[-1]
+        )
+
+        current_row.append(min(insert_cost, delete_cost, replace_cost))
+
+    # if the last entry in the row indicates the optimal cost is less than the
+    # maximum cost, and the node matches the goal, then add it.
+    if not max_cost or current_row[-1] <= max_cost and is_goal(goal, node):
+        results.append((current_row[-1], steps, node))
+
+    # if any entries in the row are less than the maximum cost, then
+    # recursively search each branch of the trie
+    if not max_cost or min(current_row) <= max_cost:
+        for step, child in iter_steps(node):
+            search_recursive(child, steps + [step], spec, goal, current_row, results, max_cost)
+
+
+if __name__ == "__main__":
+    test_code = """
+def a(b:c=d) -> e:
+    f = g(h, i).j
+"""
+    import ast
+    from ast import parse
+
+    test_ast = parse(test_code)
+    matches = search([], ast.Name(), test_ast, max_cost=5)
+    candidates = sorted(matches, key=sort_key)
+    print(candidates)
+
