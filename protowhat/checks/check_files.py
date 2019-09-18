@@ -1,10 +1,11 @@
 from pathlib import Path
 
 from protowhat.failure import debugger
+from protowhat.State import State
 
 
 def check_file(
-    state,
+    state: State,
     path,
     missing_msg="Did you create the file `{}`?",
     is_dir_msg="Want to check the file `{}`, but found a directory.",
@@ -62,7 +63,7 @@ def check_file(
     return child_state
 
 
-def has_dir(state, path, msg="Did you create a directory `{}`?"):
+def has_dir(state: State, path, msg="Did you create a directory `{}`?"):
     """Test whether a directory exists.
 
     Args:
