@@ -128,9 +128,7 @@ class State:
 
     def report(self, feedback: str):
         test_feedback = Feedback(feedback, self)
-        if test_feedback.highlight is None and self is not getattr(
-            self, "root_state", None
-        ):
+        if test_feedback.highlight is None:
             test_feedback.highlight = self.student_ast
         test = Fail(test_feedback)
 
@@ -142,6 +140,11 @@ class State:
             if getattr(self, "debug", False):
                 setattr(self, "debug", False)  # prevent loop
                 _debug(self)
+            if (
+                isinstance(feedback, Feedback)
+                and self.student_ast == self.state_history[0].student_ast
+            ):
+                feedback.highlighting_disabled = True
             raise TestFail(feedback, self.reporter.build_failed_payload(feedback))
         return result, feedback
 
