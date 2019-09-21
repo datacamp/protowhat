@@ -1,5 +1,4 @@
-from protowhat.Feedback import Feedback
-from protowhat.Test import TestFail, Fail
+from protowhat.failure import TestFail
 from functools import partial
 
 from protowhat.utils import legacy_signature
@@ -77,7 +76,8 @@ def check_not(state, *tests, msg):
 def check_or(state, *tests):
     """Test whether at least one SCT passes.
 
-    If all of the tests fail, the feedback of the first test will be presented to the student.
+    If all of the tests fail, the feedback of the first test that could zoom in the most
+    will be presented to the student.
 
     Args:
         state: State instance describing student and solution code, can be omitted if used with Ex()
@@ -99,19 +99,23 @@ def check_or(state, *tests):
             )
     """
     success = False
-    first_feedback = None
+    failures = []
 
     for test in iter_tests(tests):
         try:
             multi(state, test)
             success = True
         except TestFail as e:
-            if not first_feedback:
-                first_feedback = e.feedback
+            failures.append(e)
         if success:
             return state  # todo: add test
 
-    state.do_test(Fail(first_feedback))
+    # todo: multiple short checks with multi inside check_or
+    best_attempt = sorted(
+        failures, key=lambda exception: -len(exception.state_history)
+    )[0]
+
+    raise best_attempt
 
 
 def check_correct(state, check, diagnose):
@@ -131,20 +135,20 @@ def check_correct(state, check, diagnose):
             )
 
     """
-    feedback = None
+    failure = None
     try:
         multi(state, check)
     except TestFail as e:
-        feedback = e.feedback
+        failure = e
 
-    if feedback is not None or getattr(state, "force_diagnose", False):
+    if failure is not None or getattr(state, "force_diagnose", False):
         try:
             multi(state, diagnose)
         except TestFail as e:
-            feedback = e.feedback
+            failure = e
 
-    if feedback is not None:
-        state.do_test(Fail(feedback))
+    if failure is not None:
+        raise failure
 
     return state  # todo: add test
 
@@ -177,7 +181,6 @@ def fail(state, msg="fail"):
     Note that this would be a terrible idea for grading submissions, but may be useful while writing SCTs.
     For example, failing a test will highlight the code as if the previous test/check had failed.
     """
-    _msg = state.build_message(msg)
-    state.report(_msg)
+    state.report(msg)
 
     return state

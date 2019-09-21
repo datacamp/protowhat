@@ -188,12 +188,14 @@ def test_create_embed_state(state):
 
     def derive_custom_state_args(parent_state):
         assert parent_state == state
-        return {"student_code": "override", "custom": "Xstate property"}
+        return {
+            "student_code": "override",
+            "custom": "Xstate property",
+            "highlight_offset": {"test": "nonsense highlight"},
+        }
 
     # When
-    embed_state = create_embed_state(
-        XState, state, derive_custom_state_args, {"test": "nonsense highlight"},
-    )
+    embed_state = create_embed_state(XState, state, derive_custom_state_args)
 
     # Then
     assert isinstance(embed_state, XState)
@@ -201,7 +203,7 @@ def test_create_embed_state(state):
     assert embed_state.student_code == "override"
     assert embed_state.custom == "Xstate property"
     assert embed_state.reporter.runner == state.reporter
-    assert embed_state.reporter.highlight_offset == {"test": "nonsense highlight"}
+    assert embed_state.highlight_offset == {"test": "nonsense highlight"}
     assert embed_state.creator == {"type": "embed", "args": {"state": state}}
 
 

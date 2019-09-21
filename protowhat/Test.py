@@ -1,11 +1,4 @@
-from protowhat.Feedback import Feedback
-
-
-class TestFail(Exception):
-    def __init__(self, feedback, payload):
-        super().__init__(feedback.message)
-        self.feedback = feedback
-        self.payload = payload
+from protowhat.Feedback import FeedbackComponent
 
 
 class Test:
@@ -28,10 +21,10 @@ class Test:
         Args:
             feedback: string or Feedback object
         """
-        if issubclass(type(feedback), Feedback):
+        if issubclass(type(feedback), FeedbackComponent):
             self.feedback = feedback
         elif issubclass(type(feedback), str):
-            self.feedback = Feedback(feedback)
+            self.feedback = FeedbackComponent(feedback)
         else:
             raise TypeError(
                 "When creating a test, specify either a string or a Feedback object"

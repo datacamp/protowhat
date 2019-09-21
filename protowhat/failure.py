@@ -1,0 +1,92 @@
+from contextlib import contextmanager
+# from typing import List
+
+# from protowhat.Feedback import Feedback
+# from protowhat.State import State
+from protowhat.Feedback import Feedback, FeedbackComponent
+
+
+def check_history(state_history):
+    return (state.creator["type"] for state in state_history if state.creator)
+
+
+def invert_failure(state):
+    return "check_not" in check_history(state.state_history)
+
+
+class Failure(Exception):
+    def __init__(self, feedback, state_history):
+        super().__init__(feedback)
+        self.feedback = feedback
+        self.state_history = state_history
+
+    def __str__(self):
+        # get_message can be expensive
+        # TODO: check speed
+        return self.feedback.get_message()
+
+    @classmethod
+    def from_message(cls, message):
+        return cls(Feedback(FeedbackComponent(message)), [])
+
+
+class TestFail(Failure):
+    pass
+
+
+class InstructorError(Failure):
+    pass
+
+
+class SkipDebug(Exception):
+    pass
+
+
+@contextmanager
+def debugger(state, allow_failure=invert_failure):
+    # TODO: skip debugging in production
+    debugging = getattr(state, "debug", False)
+    state.debug = True
+    try:
+        # if not state.force_diagnose:
+        #     raise SkipDebug()
+        yield
+    except SkipDebug:
+        pass
+    except InstructorError as e:
+        if not allow_failure(state):
+            raise e
+
+    state.debug = debugging
+
+
+def _debug(state, msg="", on_error=False, force=True):
+    """
+    This SCT function makes the SCT fail with a message containing debugging information
+    and highlights the focus of the SCT at that point.
+
+    To make the interruption behave like a student failure, use ``force=False``.
+    """
+    checks = check_history(state.state_history)
+
+    feedback = ""
+    if msg:
+        feedback += msg + "\n"
+
+    if checks:
+        feedback += "SCT function state history: `{}`".format(" > ".join(checks))
+
+    if state.reporter.tests:
+        feedback += "\nLast test: `{}`".format(repr(state.reporter.tests[-1]))
+
+    if on_error:
+        # debug on next failure
+        state.debug = True
+        # or at the end (to prevent debug mode in production)
+        state.reporter.fail = True
+    else:
+        # latest highlight added automatically
+        failure_type = InstructorError if force else TestFail
+        raise failure_type(state.get_feedback(FeedbackComponent(feedback)), state.state_history)
+
+    return state

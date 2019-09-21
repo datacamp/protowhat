@@ -1,5 +1,4 @@
 import re
-from collections import Counter
 
 import markdown2
 
@@ -62,15 +61,11 @@ class Reporter(TestRunnerProxy):
     or not. All tests are executed trough do_test() in the Reporter.
     """
 
-    # This is the offset for ANTLR
-    ast_highlight_offset = {"column_start": 1, "column_end": 1}
-
-    def __init__(self, runner=None, errors=None, highlight_offset=None):
+    def __init__(self, runner=None, errors=None):
         super().__init__(runner or TestRunner())
         self.fail = False
         self.errors = errors
         self.errors_allowed = False
-        self.highlight_offset = highlight_offset or {}
         self.success_msg = "Great work!"
 
     def get_errors(self):
@@ -80,33 +75,18 @@ class Reporter(TestRunnerProxy):
         self.errors_allowed = True
 
     def build_failed_payload(self, feedback: Feedback):
-        highlight = Counter()
-        code_highlight = feedback.get_highlight_data()
-
-        path = code_highlight.get("path", None)
-        if path is not None:
-            del code_highlight["path"]
-
-        if code_highlight:
-            highlight.update(self.highlight_offset)
-            if "line_start" in highlight and "line_end" not in highlight:
-                highlight["line_end"] = highlight["line_start"]
-
-            highlight.update(code_highlight)
-            highlight.update(self.ast_highlight_offset)
-
-        if path is not None:
-            highlight["path"] = str(path)
-
         return {
             "correct": False,
-            "message": Reporter.to_html(feedback.message),
-            **highlight,
+            "message": Reporter.to_html(feedback.get_message()),
+            **feedback.get_highlight(),
         }
 
     def build_final_payload(self):
-        if self.fail or self.errors and not self.errors_allowed:
-            feedback_msg = "Your code generated an error. Fix it and try again!"
+        unexpected_errors = self.errors and not self.errors_allowed
+        if self.fail or unexpected_errors:
+            feedback_msg = "Your submission is not correct. Try again!"
+            if unexpected_errors:
+                feedback_msg = "Your code generated an error. Fix it and try again!"
             return {"correct": False, "message": Reporter.to_html(feedback_msg)}
         else:
             return {"correct": True, "message": Reporter.to_html(self.success_msg)}
