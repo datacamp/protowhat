@@ -1,9 +1,10 @@
 import pytest
+from functools import partial
 from protowhat.State import State
 from protowhat.checks import check_logic as cl
 from protowhat.Reporter import Reporter
-from protowhat.Test import TestFail as TF
-from functools import partial
+from protowhat.failure import TestFail as TF
+from protowhat.sct_syntax import link_to_state
 
 
 @pytest.fixture(scope="function")
@@ -26,7 +27,7 @@ def fails(state, msg=""):
 
 
 def passes(state):
-    return state
+    return state.to_child()
 
 
 @pytest.mark.parametrize("arg1", (passes, [passes, passes]))
@@ -51,10 +52,21 @@ def test_check_or_pass(state):
     cl.check_or(state, passes, fails)
 
 
-def test_check_or_fail(state):
+def test_check_or_fail_first(state):
     f1, f2 = partial(fails, msg="f1"), partial(fails, msg="f2")
     with pytest.raises(TF, match="f1"):
         cl.check_or(state, f1, f2)
+
+
+def test_check_or_fail_best(state):
+    f1, f2 = partial(fails, msg="f1"), partial(fails, msg="f2")
+
+    def f3(s):
+        child_state = link_to_state(passes)(s)
+        return fails(child_state, msg="f3")
+
+    with pytest.raises(TF, match="f3"):
+        cl.check_or(state, f1, f2, f3)
 
 
 @pytest.mark.parametrize("arg1", [fails, [fails, fails]])

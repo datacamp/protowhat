@@ -255,10 +255,12 @@ def get_chain_ends(chain: Chain) -> List[Chain]:
 
 
 class ChainStart:
+    """Create new chains and keep track of the created chains"""
     def __init__(self):
         self.chain_roots = []
 
     def __call__(self) -> Chain:
+        """Create a new chains and store it"""
         raise NotImplementedError()
 
 
@@ -363,7 +365,6 @@ def create_embed_state(
     parent_state: State,
     xstate: Type[State],
     state_args: Dict[str, Any] = None,
-    highlight_offset: dict = None,
 ):
     """
     Create the state for running checks in the embedded technology.
@@ -374,7 +375,6 @@ def create_embed_state(
         parent_state: state of the host technology to derive the embedded state from
         xstate: the State class of the embedded technology
         state_args: extra arguments to pass to the constructor of the embedded state
-        highlight_offset: position of the embedded code in the student code
 
     Returns:
         an instance of xstate
@@ -400,7 +400,7 @@ def create_embed_state(
         {
             **(state_args or {}),
             "reporter": Reporter(
-                parent_state.reporter, highlight_offset=highlight_offset or {}
+                parent_state.reporter
             ),
         }
     )

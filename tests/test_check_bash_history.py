@@ -4,10 +4,9 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from protowhat.Feedback import InstructorError
 from protowhat.Reporter import Reporter
 from protowhat.State import State
-from protowhat.Test import TestFail as TF
+from protowhat.failure import TestFail as TF, InstructorError
 from protowhat.checks.check_bash_history import (
     BASH_HISTORY_PATH_ENV,
     BASH_HISTORY_INFO_PATH_ENV,
