@@ -2,7 +2,7 @@ from protowhat.checks.check_simple import has_chosen, success_msg, allow_errors
 from protowhat.sct_syntax import EagerChain
 from protowhat.State import State
 from protowhat.Reporter import Reporter
-from protowhat.Test import TestFail as TF
+from protowhat.failure import TestFail as TF
 import pytest
 
 sct_ctx = {
