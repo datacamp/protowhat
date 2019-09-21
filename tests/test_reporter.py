@@ -2,7 +2,7 @@ from collections import Counter
 from pathlib import Path
 
 import pytest
-from protowhat.Feedback import Feedback
+from protowhat.Feedback import Feedback, FeedbackComponent
 from protowhat.Reporter import Reporter
 from protowhat.Test import Fail
 from tests.helper import Success
@@ -37,6 +37,7 @@ def test_test_runner_proxy():
     assert r.failures == r.runner.failures
 
 
+# TODO: test_feedback
 highlight_range_1 = {"line_start": 1, "column_start": 3, "line_end": 5, "column_end": 7}
 highlight_payload_1 = {
     "line_start": 1,
@@ -86,10 +87,12 @@ class Highlight:
     ],
 )
 def test_highlighting_offset(offset, highlight, payload_highlight_info):
-    r = Reporter(highlight_offset=offset)
-
-    f = Feedback("msg")
-    f.highlight = Highlight(highlight)
+    r = Reporter()
+    f = Feedback(
+        FeedbackComponent("msg"),
+        highlight=Highlight(highlight),
+        highlight_offset=offset,
+    )
 
     payload = r.build_failed_payload(f)
 
@@ -99,10 +102,12 @@ def test_highlighting_offset(offset, highlight, payload_highlight_info):
 
 
 def test_highlighting_offset_proxy():
-    r = Reporter(Reporter(), highlight_offset=highlight_range_2)
-
-    f = Feedback("msg")
-    f.highlight = Highlight(highlight_range_1)
+    r = Reporter()
+    f = Feedback(
+        FeedbackComponent("msg"),
+        highlight=Highlight(highlight_range_1),
+        highlight_offset=highlight_range_2,
+    )
 
     payload = r.build_failed_payload(f)
 
@@ -113,13 +118,11 @@ def test_highlighting_offset_proxy():
 
 def test_highlighting_path():
     r = Reporter()
-
-    class FeedbackState:
-        highlighting_disabled = False
-        highlight = Highlight(highlight_range_1)
-        path = Path("test.py")
-
-    f = Feedback("msg", FeedbackState())
+    f = Feedback(
+        FeedbackComponent("msg"),
+        highlight=Highlight(highlight_range_1),
+        path=Path("test.py"),
+    )
 
     payload = r.build_failed_payload(f)
 
@@ -135,20 +138,10 @@ def test_highlighting_path():
 
 def test_highlighting_path_no_position():
     r = Reporter()
-
-    class FeedbackState:
-        highlighting_disabled = False
-        highlight = Highlight(None)
-        path = Path("test.py")
-
-    f = Feedback("msg", FeedbackState())
+    f = Feedback(FeedbackComponent("msg"), path=Path("test.py"))
 
     payload = r.build_failed_payload(f)
 
-    expected_payload = {
-        "correct": False,
-        "message": "msg",
-        "path": "test.py",
-    }
+    expected_payload = {"correct": False, "message": "msg", "path": "test.py"}
 
     assert payload == expected_payload

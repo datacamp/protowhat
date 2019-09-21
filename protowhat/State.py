@@ -1,10 +1,9 @@
 from copy import copy
-from jinja2 import Template
 
 from protowhat.selectors import DispatcherInterface
-from protowhat.Feedback import Feedback, InstructorError
-from protowhat.Test import Fail, Test, TestFail
-from protowhat.utils import _debug
+from protowhat.Feedback import Feedback, FeedbackComponent
+from protowhat.Test import Fail, Test
+from protowhat.failure import TestFail, InstructorError, _debug
 
 
 class DummyDispatcher(DispatcherInterface):
@@ -39,8 +38,9 @@ class State:
         solution_result,
         reporter,
         force_diagnose=False,
+        highlight_offset=None,
         highlighting_disabled=False,
-        messages=None,
+        feedback_context=None,
         creator=None,
         solution_ast=None,
         student_ast=None,
@@ -53,8 +53,6 @@ class State:
             if k != "self":
                 self.params.append(k)
                 setattr(self, k, v)
-
-        self.messages = messages if messages else []
 
         if ast_dispatcher is None:
             self.ast_dispatcher = self.get_dispatcher()
@@ -75,7 +73,7 @@ class State:
                 if test:
                     self.report(e.message)
                 else:
-                    raise InstructorError(
+                    raise InstructorError.from_message(
                         "Something went wrong when parsing PEC or solution code: %s"
                         % str(e)
                     )
@@ -127,30 +125,38 @@ class State:
         except StopIteration:
             return self.ast_dispatcher.describe(self.student_ast, "{node_name}")
 
-    def report(self, feedback: str):
-        test_feedback = Feedback(feedback, self)
-        if test_feedback.highlight is None:
-            test_feedback.highlight = self.student_ast
+    def report(self, feedback: str, kwargs=None, append=True):
+        test_feedback = FeedbackComponent(feedback, kwargs, append)
         test = Fail(test_feedback)
 
         return self.do_test(test)
 
     def do_test(self, test: Test):
-        result, feedback = self.reporter.do_test(test)
+        result, test_feedback = self.reporter.do_test(test)
         if result is False:
             if getattr(self, "debug", False):
-                setattr(self, "debug", False)  # prevent loop
-                _debug(self)
-            if (
-                isinstance(feedback, Feedback)
-                and self.student_ast == self.state_history[0].student_ast
-            ):
-                feedback.highlighting_disabled = True
-            raise TestFail(feedback, self.reporter.build_failed_payload(feedback))
-        return result, feedback
+                _debug(self.to_child(test_feedback), "Debug on error:")
+
+            raise TestFail(self.get_feedback(test_feedback), self.state_history)
+        return result, test_feedback
 
     def do_tests(self, tests):
         return [self.do_test(test) for test in tests]
+
+    def get_feedback(self, conclusion):
+        if self.student_ast == self.state_history[0].student_ast:
+            highlighting_disabled = True
+        else:
+            highlighting_disabled = self.highlighting_disabled
+
+        return Feedback(
+            conclusion,
+            [state.feedback_context for state in self.state_history if state.feedback_context],
+            getattr(self, "highlight", self.student_ast),
+            getattr(self, "path", None),
+            highlighting_disabled,
+            self.highlight_offset,
+        )
 
     def to_child(self, append_message="", **kwargs):
         """Basic implementation of returning a child state"""
@@ -159,44 +165,12 @@ class State:
         if bad_pars:
             raise ValueError("Invalid init params for State: %s" % ", ".join(bad_pars))
 
+        if not isinstance(append_message, dict):
+            append_message = {"msg": append_message, "kwargs": {}}
+        kwargs["message"] = append_message
+
         child = copy(self)
         for k, v in kwargs.items():
             setattr(child, k, v)
 
-        # append messages
-        if not isinstance(append_message, dict):
-            append_message = {"msg": append_message, "kwargs": {}}
-        child.messages = [*self.messages, append_message]
-
         return child
-
-    def build_message(self, tail_msg="", fmt_kwargs=None, append=True):
-        if not fmt_kwargs:
-            fmt_kwargs = {}
-        out_list = []
-        # add trailing message to msg list
-        msgs = self.messages[:] + [{"msg": tail_msg, "kwargs": fmt_kwargs}]
-
-        # format messages in list, by iterating over previous, current, and next message
-        for prev_d, d, next_d in zip([{}, *msgs[:-1]], msgs, [*msgs[1:], {}]):
-            tmp_kwargs = {
-                "parent": prev_d.get("kwargs"),
-                "child": next_d.get("kwargs"),
-                "this": d["kwargs"],
-                **d["kwargs"],
-            }
-            # don't bother appending if there is no message
-            if not d or not d["msg"]:
-                continue
-            # TODO: rendering is slow in tests (40% of test time)
-            out = Template(d["msg"].replace("__JINJA__:", "")).render(tmp_kwargs)
-            out_list.append(out)
-
-        # if highlighting info is available, don't put all expand messages
-        if getattr(self, "highlight", None) and not self.highlighting_disabled:
-            out_list = out_list[-3:]
-
-        if append:
-            return "".join(out_list)
-        else:
-            return out_list[-1]

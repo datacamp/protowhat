@@ -1,47 +1,4 @@
-import pytest
-
-from tests.helper import Success, state, dummy_checks
-from protowhat.Test import TestFail as TF
-from protowhat.sct_syntax import ExGen, LazyChain
-from protowhat.utils import legacy_signature, _debug
-
-state = pytest.fixture(state)
-dummy_checks = pytest.fixture(dummy_checks)
-
-
-def test_debug(state, dummy_checks):
-    state.do_test(Success("msg"))
-    LazyChain.register_functions({"_debug": _debug, **dummy_checks})
-    Ex = ExGen(state)
-    try:
-        Ex().noop().child_state() >> LazyChain()._debug(
-            "breakpoint name"
-        )
-        assert False
-    except TF as e:
-        assert "breakpoint name" in str(e)
-        assert "history" in str(e)
-        assert "child_state" in str(e)
-        assert "test" in str(e)
-
-
-def test_delayed_debug(state, dummy_checks):
-    LazyChain.register_functions({"_debug": _debug, **dummy_checks})
-    Ex = ExGen(state)
-    try:
-        Ex()._debug("breakpoint name", on_error=True).noop().child_state().fail()
-        assert False
-    except TF as e:
-        assert "history" in str(e)
-        assert "child_state" in str(e)
-        assert "test" in str(e)
-
-
-def test_final_debug(state, dummy_checks):
-    LazyChain.register_functions({"_debug": _debug, **dummy_checks})
-    Ex = ExGen(state)
-    Ex()._debug("breakpoint name", on_error=True).noop().child_state()
-    assert state.reporter.fail
+from protowhat.utils import legacy_signature
 
 
 def test_legacy_signature():

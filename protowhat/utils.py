@@ -1,37 +1,6 @@
 from functools import wraps
 
 
-def _debug(state, msg="", on_error=False):
-    """
-    This SCT function makes the SCT fail with a message containing debugging information
-    and highlights the focus of the SCT at that point.
-    """
-    check_history = [
-        s.creator["type"] for s in state.state_history if getattr(s, "creator", None)
-    ]
-
-    feedback = ""
-    if msg:
-        feedback += msg + "\n"
-
-    if check_history:
-        feedback += "SCT function state history: `{}`".format(" > ".join(check_history))
-
-    if state.reporter.tests:
-        feedback += "\nLast test: `{}`".format(repr(state.reporter.tests[-1]))
-
-    if not on_error:
-        # latest highlight added automatically
-        state.report(feedback)
-    else:
-        # debug on next failure
-        state.debug = True
-        # or at the end (to prevent debug mode in production)
-        state.reporter.fail = True
-
-    return state
-
-
 def legacy_signature(**kwargs_mapping):
     """
     This decorator makes it possible to call a function using old argument names

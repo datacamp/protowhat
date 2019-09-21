@@ -8,7 +8,7 @@ from functools import partial
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from unittest.mock import patch, mock_open
 
-from protowhat.Test import TestFail as TF
+from protowhat.failure import TestFail as TF
 from protowhat.selectors import Dispatcher
 from protowhat.State import State
 from protowhat.Reporter import Reporter
