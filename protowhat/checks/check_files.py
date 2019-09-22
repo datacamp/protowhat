@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from protowhat.failure import debugger
+
 
 def check_file(
     state,
@@ -42,9 +44,11 @@ def check_file(
 
     sol_kwargs = {"solution_code": solution_code, "solution_ast": None}
     if solution_code:
-        sol_kwargs["solution_ast"] = (
-            state.parse(solution_code, test=False) if parse else False
-        )
+        solution_ast = False
+        if parse:
+            with debugger(state):
+                solution_ast = state.parse(solution_code)
+        sol_kwargs["solution_ast"] = solution_ast
 
     child_state = state.to_child(
         append_message="We checked the file `{}`. ".format(path),
