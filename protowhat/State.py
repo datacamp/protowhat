@@ -3,7 +3,7 @@ from copy import copy
 from protowhat.selectors import DispatcherInterface
 from protowhat.Feedback import Feedback, FeedbackComponent
 from protowhat.Test import Fail, Test
-from protowhat.failure import TestFail, _debug, debugger
+from protowhat.failure import Failure, TestFail, _debug, debugger
 
 
 class DummyDispatcher(DispatcherInterface):
@@ -139,7 +139,12 @@ class State:
         result, test_feedback = self.reporter.do_test(test)
         if result is False:
             if self.debug:
-                _debug(self.to_child(test_feedback), "\n\nDebug on error:")
+                if Failure.throwing:
+                    debug_state = self
+                else:
+                    Failure.throwing = True
+                    debug_state = self.to_child(test_feedback)
+                _debug(debug_state, "\n\nDebug on error:")
 
             raise TestFail(self.get_feedback(test_feedback), self.state_history)
         return result, test_feedback
