@@ -199,7 +199,7 @@ def test_create_embed_state(state):
 
     # Then
     assert isinstance(embed_state, XState)
-    assert not hasattr(embed_state, "debug")  # TODO
+    assert not getattr(embed_state, "debug")  # TODO
     assert embed_state.student_code == "override"
     assert embed_state.custom == "Xstate property"
     assert embed_state.reporter.runner == state.reporter

@@ -3,7 +3,7 @@ from copy import copy
 from protowhat.selectors import DispatcherInterface
 from protowhat.Feedback import Feedback, FeedbackComponent
 from protowhat.Test import Fail, Test
-from protowhat.failure import TestFail, InstructorError, _debug
+from protowhat.failure import TestFail, _debug, debugger
 from protowhat.utils import parameters_attr
 
 
@@ -29,6 +29,8 @@ class DummyDispatcher(DispatcherInterface):
 
 @parameters_attr
 class State:
+    feedback_cls = Feedback
+
     def __init__(
         self,
         student_code,
@@ -49,6 +51,7 @@ class State:
         ast_dispatcher=None,
     ):
         args = locals().copy()
+        self.debug = False
 
         for k, v in args.items():
             if k != "self":
@@ -60,23 +63,24 @@ class State:
         # Parse solution and student code
         # if possible, not done yet and wanted (ast arguments not False)
         if isinstance(self.solution_code, str) and self.solution_ast is None:
-            self.solution_ast = self.parse(self.solution_code, test=False)
+            with debugger(self):
+                self.solution_ast = self.parse(self.solution_code)
         if isinstance(self.student_code, str) and self.student_ast is None:
             self.student_ast = self.parse(self.student_code)
 
-    def parse(self, text, test=True):
+    def parse(self, text):
         result = None
         if self.ast_dispatcher:
             try:
                 result = self.ast_dispatcher.parse(text)
             except self.ast_dispatcher.ParseError as e:
-                if test:
-                    self.report(e.message)
-                else:
-                    raise InstructorError.from_message(
+                if self.debug:
+                    self.report(
                         "Something went wrong when parsing PEC or solution code: %s"
                         % str(e)
                     )
+                else:
+                    self.report(e.message)
 
         return result
 
@@ -134,8 +138,8 @@ class State:
     def do_test(self, test: Test):
         result, test_feedback = self.reporter.do_test(test)
         if result is False:
-            if getattr(self, "debug", False):
-                _debug(self.to_child(test_feedback), "Debug on error:")
+            if self.debug:
+                _debug(self.to_child(test_feedback), "\n\nDebug on error:")
 
             raise TestFail(self.get_feedback(test_feedback), self.state_history)
         return result, test_feedback
@@ -144,21 +148,21 @@ class State:
         return [self.do_test(test) for test in tests]
 
     def get_feedback(self, conclusion):
-        if self.student_ast == self.state_history[0].student_ast:
-            highlighting_disabled = True
-        else:
-            highlighting_disabled = self.highlighting_disabled
-
-        return Feedback(
-            conclusion,
-            [state.feedback_context for state in self.state_history if state.feedback_context],
-            getattr(self, "highlight", self.student_ast),
-            getattr(self, "path", None),
-            highlighting_disabled,
-            self.highlight_offset,
+        full_code_position = self.feedback_cls.get_highlight_position(
+            self.state_history[0].student_ast
         )
 
-    def to_child(self, append_message="", **kwargs):
+        return self.feedback_cls(
+            conclusion,
+            [state.feedback_context for state in self.state_history],
+            getattr(self, "highlight", self.student_ast),
+            getattr(self, "path", None),
+            self.highlighting_disabled,
+            self.highlight_offset,
+            full_code_position,
+        )
+
+    def to_child(self, append_message=None, **kwargs):
         """Basic implementation of returning a child state"""
 
         bad_parameters = set(kwargs) - set(self.parameters)
@@ -167,9 +171,10 @@ class State:
                 "Invalid init parameters for State: %s" % ", ".join(bad_parameters)
             )
 
-        if not isinstance(append_message, dict):
-            append_message = {"msg": append_message, "kwargs": {}}
-        kwargs["message"] = append_message
+        if append_message and not isinstance(append_message, FeedbackComponent):
+            append_message = FeedbackComponent(append_message)
+        kwargs["feedback_context"] = append_message
+        kwargs["creator"] = {"type": "to_child", "args": {"state": self}}
 
         child = copy(self)
         for k, v in kwargs.items():
