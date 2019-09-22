@@ -37,7 +37,10 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
         ):
             ba = inspect.signature(check).bind(state, *args, **kwargs)
             ba.apply_defaults()
-            new_state.creator = {"type": check.__name__, "args": ba.arguments}
+            new_state.creator = {
+                "type": check.__name__,
+                "args": {**new_state.creator.get("args", {}), **ba.arguments},
+            }
 
         return new_state
 
@@ -62,14 +65,9 @@ class ChainedCall:
         Data for a function call that can be chained
         This means the chain state should only be provided when calling.
         """
-        if args is None:
-            args = ()
-        if kwargs is None:
-            kwargs = {}
-
         self.callable = callable_
-        self.args = args
-        self.kwargs = kwargs
+        self.args = args or ()
+        self.kwargs = kwargs or {}
         if self.strict:
             self.validate()
 
@@ -247,15 +245,14 @@ class ChainExtender:
 
 def get_chain_ends(chain: Chain) -> List[Chain]:
     if chain.next:
-        return [*chain_iters(
-            *(get_chain_ends(branch) for branch in chain.next)
-        )]
+        return [*chain_iters(*(get_chain_ends(branch) for branch in chain.next))]
     else:
         return [chain]
 
 
 class ChainStart:
     """Create new chains and keep track of the created chains"""
+
     def __init__(self):
         self.chain_roots = []
 
@@ -362,9 +359,7 @@ def create_sct_context(state_cls: Type[State], sct_dict, root_state=None):
 
 
 def create_embed_state(
-    parent_state: State,
-    xstate: Type[State],
-    state_args: Dict[str, Any] = None,
+    parent_state: State, xstate: Type[State], state_args: Dict[str, Any] = None
 ):
     """
     Create the state for running checks in the embedded technology.
@@ -396,14 +391,7 @@ def create_embed_state(
 
     # manually add / override arguments and
     # configure the reporter to collaborate with the parent state reporter
-    args.update(
-        {
-            **(state_args or {}),
-            "reporter": Reporter(
-                parent_state.reporter
-            ),
-        }
-    )
+    args.update({**(state_args or {}), "reporter": Reporter(parent_state.reporter)})
 
     return xstate(**args)
 

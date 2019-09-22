@@ -87,14 +87,14 @@ def check_node(
     except IndexError:
         # use speaker on ast dialect module to get message, or fall back to generic
         ast_path = state.get_ast_path() or "highlighted code"
-        _msg = state.ast_dispatcher.describe(
+        msg = state.ast_dispatcher.describe(
             sol_stmt, missing_msg, index=index, ast_path=ast_path
         )
-        if _msg is None:
-            _msg = MSG_CHECK_FALLBACK
-        if should_append_msg and not has_custom_message:
-            _msg = state.build_message(_msg)
-        state.report(_msg)
+        if msg is None:
+            msg = MSG_CHECK_FALLBACK
+        if not should_append_msg or has_custom_message:
+            state.report(msg, append=False)
+        state.report(msg)
 
     append_message = None
     if should_append_msg:
@@ -160,14 +160,14 @@ def check_edge(state, name, index=0, missing_msg=None, should_append_msg=False):
     try:
         stu_attr = select(name, state.student_ast)
     except:
-        if should_append_msg and not has_custom_message:
-            _msg = state.build_message(_msg)
+        if not should_append_msg or has_custom_message:
+            state.report(_msg, append=False)
         state.report(_msg)
 
     # fail if attribute exists, but is none only for student
     if stu_attr is None and sol_attr is not None:
-        if should_append_msg and not has_custom_message:
-            _msg = state.build_message(_msg)
+        if not should_append_msg or has_custom_message:
+            state.report(_msg, append=False)
         state.report(_msg)
 
     append_message = None
@@ -335,8 +335,8 @@ def has_equal_ast(
         else "Something is missing.",
     )
     if (exact and (sol_rep != stu_rep)) or (not exact and (sol_rep not in stu_rep)):
-        if should_append_msg and not has_custom_message:
-            _msg = state.build_message(_msg)
+        if not should_append_msg or has_custom_message:
+            state.report(_msg, append=False)
         state.report(_msg)
 
     return state

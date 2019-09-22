@@ -3,7 +3,6 @@ import re
 
 from pathlib import Path
 
-from protowhat.Feedback import Feedback, FeedbackComponent
 from protowhat.failure import InstructorError, debugger
 
 # env vars
