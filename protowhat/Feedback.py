@@ -25,6 +25,7 @@ class Feedback:
         path=None,
         highlighting_disabled=False,
         highlight_offset=None,
+        full_code_position=None,
     ):
         self.conclusion = conclusion
         self.context_components = context_components or []
@@ -32,49 +33,37 @@ class Feedback:
         self.path = path
         self.highlighting_disabled = highlighting_disabled
         self.highlight_offset = highlight_offset or {}
+        self.full_code_position = full_code_position
 
-    @property
-    def _highlight_position(self) -> Dict[str, int]:
-        if hasattr(self.highlight, "get_position"):
-            position = self.highlight.get_position()
-        elif getattr(self.highlight, "first_token", None) and getattr(
-            self.highlight, "last_token", None
-        ):
-            # used by pythonwhat
-            # a plugin+register system would be better
-            # if many different AST interfaces exist
-            position = {
-                "line_start": self.highlight.first_token.start[0],
-                "column_start": self.highlight.first_token.start[1],
-                "line_end": self.highlight.last_token.end[0],
-                "column_end": self.highlight.last_token.end[1],
-            }
-        else:
-            position = None
-
-        return position
+    @classmethod
+    def get_highlight_position(cls, highlight) -> Dict[str, int]:
+        if hasattr(highlight, "get_position"):
+            return highlight.get_position()
 
     def get_highlight(self) -> Dict[str, int]:
         highlight = Counter()
+
         if not self.highlighting_disabled:
-            position = self._highlight_position
+            position = self.get_highlight_position(self.highlight)
 
-            if position:
-                highlight.update(self.highlight_offset)
-                if "line_start" in highlight and "line_end" not in highlight:
-                    highlight["line_end"] = highlight["line_start"]
+            # TODO: disable highlighting everything
+            if True or not position == self.full_code_position:
+                if position:
+                    highlight.update(self.highlight_offset)
+                    if "line_start" in highlight and "line_end" not in highlight:
+                        highlight["line_end"] = highlight["line_start"]
 
-                highlight.update(position)
-                highlight.update(self.ast_highlight_offset)
+                    highlight.update(position)
+                    highlight.update(self.ast_highlight_offset)
 
-            if self.path:
-                highlight["path"] = str(self.path)
+                if self.path:
+                    highlight["path"] = str(self.path)
 
         return highlight or {}
 
     def get_message(self):
         out_list = []
-        msgs = [*self.context_components, self.conclusion]
+        msgs = [*filter(None.__ne__, self.context_components), self.conclusion]
 
         if not self.conclusion.append:
             msgs = msgs[-1:]
@@ -83,7 +72,7 @@ class Feedback:
             msgs = msgs[-3:]
 
         # format messages in list, by iterating over previous, current, and next message
-        for prev_d, d, next_d in zip([{}, *msgs[:-1]], msgs, [*msgs[1:], {}]):
+        for prev_d, d, next_d in zip([None, *msgs[:-1]], msgs, [*msgs[1:], None]):
             tmp_kwargs = {
                 "parent": getattr(prev_d, "kwargs", None),
                 "child": getattr(next_d, "kwargs", None),
@@ -91,7 +80,7 @@ class Feedback:
                 **getattr(d, "kwargs"),
             }
             # don't bother appending if there is no message
-            if not d or not getattr(d, "feedback"):
+            if not getattr(d, "feedback"):
                 continue
             else:
                 # TODO: rendering is slow in tests (40% of test time)

@@ -85,12 +85,12 @@ def check_node(
     except IndexError:
         # use speaker on ast dialect module to get message, or fall back to generic
         ast_path = state.get_ast_path() or "highlighted code"
-        _msg = state.ast_dispatcher.describe(
+        msg = state.ast_dispatcher.describe(
             sol_stmt, missing_msg, index=index, ast_path=ast_path
         )
-        if _msg is None:
-            _msg = MSG_CHECK_FALLBACK
-        state.report(_msg)
+        if msg is None:
+            msg = MSG_CHECK_FALLBACK
+        state.report(msg)
 
     return state.to_child(student_ast=stu_stmt, solution_ast=sol_stmt)
 
