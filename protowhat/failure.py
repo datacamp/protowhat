@@ -16,6 +16,8 @@ def invert_failure(state: "State") -> bool:
 
 
 class Failure(Exception):
+    throwing = False
+
     def __init__(self, feedback: Feedback, state_history: List["State"]):
         super().__init__(feedback)
         self.feedback = feedback
