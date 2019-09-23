@@ -7,6 +7,7 @@ from typing import Type, Callable, Dict, Any, Optional, List
 
 from protowhat.Reporter import Reporter
 from protowhat.State import State
+from protowhat.failure import InstructorError, _debug
 
 
 def state_dec_gen(state_cls: Type[State]):
@@ -29,7 +30,16 @@ def state_dec_gen(state_cls: Type[State]):
 def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
     @wraps(check)
     def wrapper(state, *args, **kwargs):
-        new_state = check(state, *args, **kwargs)
+        raises = False
+        try:
+            new_state = check(state, *args, **kwargs)
+        except InstructorError as e:
+            raises = True
+            try:
+                new_state = state.to_child(e.feedback.conclusion)
+            except InstructorError as e:
+                new_state = state
+
         if (
             new_state != state
             and hasattr(new_state, "creator")
@@ -40,6 +50,9 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
                 "type": check.__name__,
                 "args": {**new_state.creator.get("args", {}), **ba.arguments},
             }
+
+        if raises:
+            _debug(new_state, "\n\nDebug on error:")
 
         return new_state
 
