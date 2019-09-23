@@ -47,7 +47,7 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
             ba = inspect.signature(check).bind(state, *args, **kwargs)
             ba.apply_defaults()
             new_state.creator = {
-                "type": check.__name__,
+                "type": getattr(check, "__name__", type(check).__name__),
                 "args": {**new_state.creator.get("args", {}), **ba.arguments},
             }
 
