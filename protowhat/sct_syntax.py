@@ -34,7 +34,6 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
         if (
             new_state != state
             and hasattr(new_state, "creator")
-            and not isinstance(check, LazyChain)
         ):
             ba = inspect.signature(check).bind(state, *args, **kwargs)
             ba.apply_defaults()
@@ -66,7 +65,7 @@ class ChainedCall:
         Data for a function call that can be chained
         This means the chain state should only be provided when calling.
         """
-        self.callable = callable_
+        self.callable = link_to_state(callable_)
         self.args = args or ()
         self.kwargs = kwargs or {}
         if self.strict:
@@ -76,7 +75,7 @@ class ChainedCall:
         pass
 
     def __call__(self, state: State) -> State:
-        return link_to_state(self.callable)(state, *self.args, **self.kwargs)
+        return self.callable(state, *self.args, **self.kwargs)
 
     def __str__(self):
         if isinstance(self.callable, LazyChain):
@@ -148,7 +147,7 @@ class Chain:
         # wrapping the lazy chain makes it possible to reuse lazy chains
         # while still keeping a unique upstream chain (needed to lazily execute chains)
         # during execution, the state provides access to the full upstream context for an invocation
-        return type(self)(ChainedCall(f), self)
+        return type(self)(f, self)
 
     def __call__(self, *args, **kwargs) -> State:
         # running the chain (multiple runs possible)
