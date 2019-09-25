@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.13.0
+
+- Add include_head option to Selector
+
 ## 1.12.0
 
 - Add messaging helpers
