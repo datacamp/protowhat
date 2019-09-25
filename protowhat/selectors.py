@@ -8,24 +8,23 @@ from protowhat.utils_messaging import get_ord
 
 
 class Selector(NodeVisitor):
-    def __init__(self, target_cls, target_cls_name=None, strict=True, priority=None):
+    def __init__(self, target_cls, target_cls_name=None, strict=True, priority=None, include_head=False):
         self.target_cls = target_cls
         self.target_cls_name = target_cls_name
         self.strict = strict
         self.priority = priority if priority else self._get_node_priority(target_cls)
         self.out = []
+        self.include_head = include_head
 
     def visit(self, node, head=False):
         """
         Find child nodes at the first level
-        and keep searching if their children have a lower priority
+        and keep searching if their children have a lower priority.
+        If self.include_head is True then the starting node will also be considered.
         """
-        if head:
-            return super().visit(node)
-
-        if self.is_match(node):
+        if (not head or self.include_head) and self.is_match(node):
             self.out.append(node)
-        if self.has_priority_over(node):
+        if self.has_priority_over(node) or head:
             return super().visit(node)
 
     def visit_list(self, lst):
