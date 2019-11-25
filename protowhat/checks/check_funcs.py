@@ -5,7 +5,7 @@ from functools import partial, wraps
 from protowhat.Feedback import Feedback
 
 MSG_CHECK_FALLBACK = "Your submission is incorrect. Try again!"
-DEFAULT_MISSING_MSG = "Check the {ast_path}. Could not find the {index}{node_name}."
+DEFAULT_MISSING_MSG = "Could not find the {index}{node_name}."
 DEFAULT_APPEND_MSG = "Check the {index}{node_name}. "
 
 
@@ -39,12 +39,7 @@ def requires_ast(f):
 
 @requires_ast
 def check_node(
-    state,
-    name,
-    index=0,
-    missing_msg=None,
-    priority=None,
-    should_append_msg=False,
+    state, name, index=0, missing_msg=None, priority=None, should_append_msg=False
 ):
     """Select a node from abstract syntax tree (AST), using its name and index position.
 
@@ -104,19 +99,15 @@ def check_node(
     append_message = None
     if should_append_msg:
         append_message = state.ast_dispatcher.describe(
-                sol_stmt, DEFAULT_APPEND_MSG, index=index
-            )
-    return state.to_child(student_ast=stu_stmt, solution_ast=sol_stmt, append_message=append_message)
+            sol_stmt, DEFAULT_APPEND_MSG, index=index
+        )
+    return state.to_child(
+        student_ast=stu_stmt, solution_ast=sol_stmt, append_message=append_message
+    )
 
 
 @requires_ast
-def check_edge(
-    state,
-    name,
-    index=0,
-    missing_msg=None,
-    should_append_msg=False,
-):
+def check_edge(state, name, index=0, missing_msg=None, should_append_msg=False):
     """Select an attribute from an abstract syntax tree (AST) node, using the attribute name.
 
     Args:
@@ -184,7 +175,9 @@ def check_edge(
         append_message = state.ast_dispatcher.describe(
             state.student_ast, "Check the {field_name}. ", index=index, field=name
         )
-    return state.to_child(student_ast=stu_attr, solution_ast=sol_attr, append_message=append_message)
+    return state.to_child(
+        student_ast=stu_attr, solution_ast=sol_attr, append_message=append_message
+    )
 
 
 def has_code(
