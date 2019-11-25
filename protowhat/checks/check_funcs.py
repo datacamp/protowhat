@@ -5,7 +5,7 @@ from functools import partial, wraps
 from protowhat.Feedback import Feedback
 
 MSG_CHECK_FALLBACK = "Your submission is incorrect. Try again!"
-DEFAULT_MISSING_MSG = "Check the {ast_path}. Could not find the {index}{node_name}."
+DEFAULT_MISSING_MSG = "Could not find the {index}{node_name}."
 DEFAULT_APPEND_MSG = "Check the {index}{node_name}. "
 
 
