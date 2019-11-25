@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 1.14.1
+
+- Fix final feedback message after append_messsage(s) from having duplicate information
+
 ## 1.14.0
 
 - Add (default off) append_message functionality to check_node, check_edge and has_eqaul_ast
