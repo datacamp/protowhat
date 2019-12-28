@@ -82,14 +82,16 @@ class Reporter(TestRunnerProxy):
         }
 
     def build_final_payload(self):
-        unexpected_errors = self.errors and not self.errors_allowed
-        if self.fail or unexpected_errors:
+        correct = False
+        if self.errors and not self.errors_allowed:
+            feedback_msg = "Your code generated an error. Fix it and try again!"
+        elif self.fail:
             feedback_msg = "Your submission is not correct. Try again!"
-            if unexpected_errors:
-                feedback_msg = "Your code generated an error. Fix it and try again!"
-            return {"correct": False, "message": Reporter.to_html(feedback_msg)}
         else:
-            return {"correct": True, "message": Reporter.to_html(self.success_msg)}
+            correct = True
+            feedback_msg = self.success_msg
+
+        return {"correct": correct, "message": Reporter.to_html(feedback_msg)}
 
     @staticmethod
     def to_html(msg):
