@@ -7,7 +7,7 @@ from typing import Type, Tuple, Callable, Dict, Any, Optional, List
 
 from protowhat.Reporter import Reporter
 from protowhat.State import State
-from protowhat.failure import InstructorError, _debug
+from protowhat.failure import Failure, InstructorError, _debug
 from protowhat.utils import get_class_parameters
 
 
@@ -28,32 +28,57 @@ def state_dec_gen(state_cls: Type[State]):
     return state_dec
 
 
+def get_check_name(check) -> str:
+    # Probe objects have a test_name
+    return getattr(check, "__name__", getattr(check, "test_name", type(check).__name__))
+
+
 def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
     @wraps(check)
     def wrapper(state, *args, **kwargs):
-        raises = False
+        new_state = None
+        error = None
+        should_debug = False
         try:
             new_state = check(state, *args, **kwargs)
-        except InstructorError as e:
-            raises = True
-            try:
-                new_state = state.to_child(e.feedback.conclusion)
-            except InstructorError as e:
-                new_state = state
+        except Failure as exception:
+            error = exception
+            # TODO: add debug information to student failure in correct environment
+            # Prevent double debugging
+            should_debug = (isinstance(error, InstructorError)) and get_check_name(
+                check
+            ) != "_debug"
 
-        if (
-            new_state != state
-            and hasattr(new_state, "creator")
-        ):
+            if should_debug:
+                # Try creating a child state to set creator info
+                # without overriding earlier creator info
+                try:
+                    new_state = state.to_child(error.feedback.conclusion)
+                except InstructorError:
+                    pass
+
+        if not new_state:
+            new_state = state
+
+        if new_state != state and hasattr(new_state, "creator"):
             ba = inspect.signature(check).bind(state, *args, **kwargs)
             ba.apply_defaults()
             new_state.creator = {
-                "type": getattr(check, "__name__", type(check).__name__),
+                "type": get_check_name(check),
                 "args": {**new_state.creator.get("args", {}), **ba.arguments},
             }
 
-        if raises:
-            _debug(new_state, "\n\nDebug on error:")
+        if error:
+            if should_debug:
+                # The force flag prevents elevating a student failure with debugging info
+                # to InstructorError, which would break SCTs
+                _debug(
+                    new_state,
+                    "\n\nDebug on error:",
+                    force=isinstance(error, InstructorError),
+                )
+
+            raise error
 
         return new_state
 
