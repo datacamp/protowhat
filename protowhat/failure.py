@@ -41,21 +41,14 @@ class InstructorError(Failure):
     pass
 
 
-class SkipDebug(Exception):
-    pass
-
-
 @contextmanager
 def debugger(state: "State", allow_failure: Callable[["State"], bool] = invert_failure):
     # TODO: skip debugging in production
     debugging = state.debug
+    skippable = False  # not state.force_diagnose
     state.debug = True
     try:
-        # if not state.force_diagnose:
-        #     raise SkipDebug()
-        yield
-    except SkipDebug:
-        pass
+        yield skippable
     except InstructorError as e:
         if not allow_failure(state):
             raise e
