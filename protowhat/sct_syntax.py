@@ -60,10 +60,6 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
     return wrapper
 
 
-def to_string(arg) -> str:
-    return str(arg)
-
-
 class ChainedCall:
     strict = False
     __slots__ = ("callable", "args", "kwargs")
@@ -99,12 +95,10 @@ class ChainedCall:
                 + "("
                 + ", ".join(
                     chain_iters(
-                        map(to_string, self.args),
-                        map(
-                            lambda kwarg, kwarg_value: "{}={}".format(
-                                kwarg, to_string(kwarg_value)
-                            ),
-                            self.kwargs.items(),
+                        (str(arg) for arg in self.args),
+                        (
+                            "{}={}".format(kwarg, value)
+                            for kwarg, value in self.kwargs.items()
                         ),
                     )
                 )
