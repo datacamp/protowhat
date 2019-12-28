@@ -46,18 +46,19 @@ class Feedback:
         if not self.highlighting_disabled:
             position = self.get_highlight_position(self.highlight)
 
-            # TODO: disable highlighting everything
-            if True or not position == self.full_code_position:
-                if position:
-                    highlight.update(self.highlight_offset)
-                    if "line_start" in highlight and "line_end" not in highlight:
-                        highlight["line_end"] = highlight["line_start"]
+            # TODO: handle highlighting everything
+            # if position != self.full_code_position:
 
-                    highlight.update(position)
-                    highlight.update(self.ast_highlight_offset)
+            if position:
+                highlight.update(self.highlight_offset)
+                if "line_start" in highlight and "line_end" not in highlight:
+                    highlight["line_end"] = highlight["line_start"]
 
-                if self.path:
-                    highlight["path"] = str(self.path)
+                highlight.update(position)
+                highlight.update(self.ast_highlight_offset)
+
+        if self.path:
+            highlight["path"] = str(self.path)
 
         return highlight or {}
 
