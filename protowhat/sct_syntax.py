@@ -18,7 +18,7 @@ def state_dec_gen(state_cls: Type[State]):
         @wraps(f)
         def wrapper(*args, **kwargs):
             state = kwargs.get("state", args[0] if len(args) else None)
-            if isinstance(state, state_cls):
+            if isinstance(state, State):
                 return f(*args, **kwargs)
             else:
                 return LazyChain(ChainedCall(f, args, kwargs))
