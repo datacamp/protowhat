@@ -1,5 +1,6 @@
 import inspect
 import builtins
+from abc import abstractmethod
 from contextlib import contextmanager
 from functools import wraps, reduce
 from itertools import chain as chain_iters
@@ -84,7 +85,13 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
     return wrapper
 
 
-class ChainedCall:
+class Chainable:
+    @abstractmethod
+    def __call__(self, state: State) -> State:
+        raise NotImplementedError
+
+
+class ChainedCall(Chainable):
     strict = False
     __slots__ = ("callable", "args", "kwargs")
 
@@ -130,13 +137,13 @@ class ChainedCall:
             )
 
 
-class Chain:
+class Chain(Chainable):
     registered_functions = {}
     empty_call_str = ""
 
     def __init__(
         self,
-        chained_call: Optional[ChainedCall] = None,
+        chained_call: Optional[Chainable] = None,
         previous: Optional["Chain"] = None,
     ):
         if not chained_call and previous:
@@ -209,7 +216,7 @@ class LazyChain(Chain):
 class EagerChain(Chain):
     def __init__(
         self,
-        chained_call: Optional[ChainedCall] = None,
+        chained_call: Optional[Chainable] = None,
         previous: Optional["EagerChain"] = None,
         state: Optional[State] = None,
     ):
