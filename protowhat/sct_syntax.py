@@ -183,9 +183,8 @@ class Chain:
         # during execution, the state provides access to the full upstream context for an invocation
         return type(self)(f, self)
 
-    def __call__(self, *args, **kwargs) -> State:
+    def __call__(self, state) -> State:
         # running the chain (multiple runs possible)
-        state = kwargs.get("state") or args[0]
         return reduce(
             lambda s, call: call(s),
             (chain.call for chain in self._history if chain.call is not None),
