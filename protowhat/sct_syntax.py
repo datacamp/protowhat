@@ -136,7 +136,7 @@ class Chain:
 
     def __init__(
         self,
-        chained_call: Optional[ChainedCall] = None,
+        chained_call: Optional[Callable] = None,
         previous: Optional["Chain"] = None,
     ):
         if not chained_call and previous:
@@ -170,7 +170,7 @@ class Chain:
             # in case someone does: a = chain.a; a(...); a(...)
             return ChainExtender(self, registered_functions[attr])
 
-    def __rshift__(self, f: "LazyChain") -> "Chain":
+    def __rshift__(self, f: Callable) -> "Chain":
         if isinstance(f, EagerChain):
             raise BaseException(
                 "did you use a result of the Ex() function on the right hand side of the >> operator?"
@@ -209,7 +209,7 @@ class LazyChain(Chain):
 class EagerChain(Chain):
     def __init__(
         self,
-        chained_call: Optional[ChainedCall] = None,
+        chained_call: Optional[Callable] = None,
         previous: Optional["EagerChain"] = None,
         state: Optional[State] = None,
     ):
