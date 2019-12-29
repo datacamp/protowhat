@@ -140,6 +140,9 @@ class Chain:
         chained_call: Optional[ChainedCall] = None,
         previous: Optional["Chain"] = None,
     ):
+        if not chained_call and previous:
+            raise ValueError("After the start of a chain a call is required")
+
         self.call = chained_call
         self.previous = previous
         self.next = []
@@ -213,8 +216,6 @@ class EagerChain(Chain):
         state: Optional[State] = None,
     ):
         super().__init__(chained_call, previous)
-        if not chained_call and previous:
-            raise ValueError("After the start of a chain a call is required")
         if previous is not None and state is not None:
             raise ValueError(
                 "State should be set at the start. "
