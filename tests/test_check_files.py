@@ -22,7 +22,7 @@ from protowhat.checks.check_funcs import check_node, has_code
 ast.Expr._priority = 0
 DUMMY_NODES = {"Expr": ast.Expr}
 
-Ex = ExGen(None)
+Ex = ExGen({}, None)
 
 
 class ParseHey:
@@ -157,8 +157,9 @@ def test_missing_check_dir(state):
 
 
 def test_check_file_fchain(state, temp_file):
-    LazyChain.register_functions({"check_file": cf.check_file})
-    Ex(state) >> LazyChain().check_file(temp_file.name)
+    Ex(state) >> LazyChain(
+        chainable_functions={"check_file": cf.check_file}
+    ).check_file(temp_file.name)
 
 
 def test_load_file(state, temp_file):
