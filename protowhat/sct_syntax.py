@@ -11,7 +11,7 @@ from protowhat.failure import Failure, InstructorError, _debug
 from protowhat.utils import get_class_parameters
 
 
-def state_dec_gen(state_cls: Type[State]):
+def state_dec_gen(sct_dict: Dict[str, Callable]):
     def state_dec(f):
         """Decorate check_* functions to return F chain if no state passed"""
 
@@ -21,7 +21,9 @@ def state_dec_gen(state_cls: Type[State]):
             if isinstance(state, State):
                 return f(*args, **kwargs)
             else:
-                return LazyChain(ChainedCall(f, args, kwargs))
+                return LazyChain(
+                    ChainedCall(f, args, kwargs), chainable_functions=sct_dict
+                )
 
         return wrapper
 
@@ -132,13 +134,13 @@ class ChainedCall:
 
 
 class Chain:
-    registered_functions = {}
     empty_call_str = ""
 
     def __init__(
         self,
         chained_call: Optional[Callable] = None,
         previous: Optional["Chain"] = None,
+        chainable_functions: Dict[str, Callable] = None,
     ):
         if not chained_call and previous:
             raise ValueError("After the start of a chain a call is required")
@@ -150,26 +152,26 @@ class Chain:
         if self.previous:
             previous.next.append(self)
 
+        if chainable_functions:
+            self.chainable_functions = chainable_functions
+        elif previous:
+            self.chainable_functions = previous.chainable_functions
+        else:
+            self.chainable_functions = {}
+
     @property
     def _history(self) -> list:
         return getattr(self.previous, "_history", []) + [self]
 
-    @classmethod
-    def register_functions(cls, functions: Dict[str, Callable]):
-        # todo: check for overrides?
-        # this updates the attribute on Chain
-        # registering through subclasses updates Chain
-        cls.registered_functions.update(functions)
-
     def __getattr__(self, attr):
-        registered_functions = self.registered_functions
-        if attr not in registered_functions:
+        chainable_functions = self.chainable_functions
+        if attr not in chainable_functions:
             if attr not in ("_history",):  # todo
                 raise AttributeError("No function named %s" % attr)
             return self.__getattribute__(attr)
         else:
             # in case someone does: a = chain.a; a(...); a(...)
-            return ChainExtender(self, registered_functions[attr])
+            return ChainExtender(self, chainable_functions[attr])
 
     def __rshift__(self, f: Callable) -> "Chain":
         if isinstance(f, EagerChain):
@@ -212,9 +214,10 @@ class EagerChain(Chain):
         self,
         chained_call: Optional[Callable] = None,
         previous: Optional["EagerChain"] = None,
+        chainable_functions: Dict[str, Callable] = None,
         state: Optional[State] = None,
     ):
-        super().__init__(chained_call, previous)
+        super().__init__(chained_call, previous, chainable_functions)
         if previous is not None and state is not None:
             raise ValueError(
                 "State should be set at the start. "
@@ -285,8 +288,9 @@ def get_chain_ends(chain: Chain) -> List[Chain]:
 class ChainStart:
     """Create new chains and keep track of the created chains"""
 
-    def __init__(self):
+    def __init__(self, sct_dict: Dict[str, Callable]):
         self.chain_roots = []
+        self.sct_dict = sct_dict
 
     def __call__(self) -> Chain:
         """Create a new chains and store it"""
@@ -295,7 +299,7 @@ class ChainStart:
 
 class LazyChainStart(ChainStart):
     def __call__(self) -> LazyChain:
-        chain_root = LazyChain(None)
+        chain_root = LazyChain(chainable_functions=self.sct_dict)
         self.chain_roots.append(chain_root)
 
         return chain_root
@@ -310,8 +314,8 @@ class LazyChainStart(ChainStart):
 
 
 class ExGen(ChainStart):
-    def __init__(self, root_state, strict=True):
-        super().__init__()
+    def __init__(self, sct_dict: Dict[str, Callable], root_state, strict=True):
+        super().__init__(sct_dict)
         self.root_state = root_state
         self.strict = strict
 
@@ -345,7 +349,9 @@ class ExGen(ChainStart):
         if self.strict and state is None and self.root_state is None:
             raise Exception("explicitly pass state to Ex, or set Ex.root_state")
 
-        chain_root = EagerChain(None, state=state or self.root_state)
+        chain_root = EagerChain(
+            None, chainable_functions=self.sct_dict, state=state or self.root_state
+        )
         self.chain_roots.append(chain_root)
 
         return chain_root
@@ -364,29 +370,25 @@ def get_checks_dict(checks_module) -> Dict[str, Callable]:
     }
 
 
-def create_sct_context(
-    state_cls: Type[State], sct_dict, root_state: State = None
-) -> Dict[str, Callable]:
+def create_sct_context(sct_dict, root_state: State = None) -> Dict[str, Callable]:
     """
     Create the globals that will be available when running the SCT.
 
     Args:
-        state_cls: the State class of the technology to create the context for
         sct_dict: a dictionary of the functions to make available
         root_state: a State instance with the exercise information available to the SCT
 
     Returns:
         dict: the globals available to the SCT code
     """
-    state_dec = state_dec_gen(state_cls)
-    LazyChain.register_functions(sct_dict)
+    state_dec = state_dec_gen(sct_dict)
     sct_ctx = {k: state_dec(v) for k, v in sct_dict.items()}
 
     ctx = {
         **sct_ctx,
         "state_dec": state_dec,  # needed by ext packages
-        "Ex": ExGen(root_state),
-        "F": LazyChain,
+        "Ex": ExGen(sct_dict, root_state),
+        "F": LazyChainStart(sct_dict),
     }
 
     return ctx
@@ -465,7 +467,7 @@ def create_embed_context(technology: str, context: EagerChain, **kwargs):
 
     embed_state = create_embed_state(xwhat_state, parent_state, **kwargs)
 
-    return create_sct_context(xwhat_state, xwhat_scts, root_state=embed_state)
+    return create_sct_context(xwhat_scts, root_state=embed_state)
 
 
 def get_embed_chain_constructors(*args, **kwargs) -> Tuple[Type, Type]:
