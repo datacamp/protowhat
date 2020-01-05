@@ -170,7 +170,10 @@ class State:
             )
 
         if append_message and not isinstance(append_message, FeedbackComponent):
-            append_message = FeedbackComponent(append_message)
+            if isinstance(append_message, str):
+                append_message = FeedbackComponent(append_message)
+            else:
+                raise ValueError("append_message should be a FeedbackComponent or a string")
         kwargs["feedback_context"] = append_message
         kwargs["creator"] = {"type": "to_child", "args": {"state": self}}
 
