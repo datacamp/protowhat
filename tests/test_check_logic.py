@@ -58,17 +58,6 @@ def test_check_or_fail_first(state):
         cl.check_or(state, f1, f2)
 
 
-def test_check_or_fail_best(state):
-    f1, f2 = partial(fails, msg="f1"), partial(fails, msg="f2")
-
-    def f3(s):
-        child_state = link_to_state(passes)(s)
-        return fails(child_state, msg="f3")
-
-    with pytest.raises(TF, match="f3"):
-        cl.check_or(state, f1, f2, f3)
-
-
 @pytest.mark.parametrize("arg1", [fails, [fails, fails]])
 def test_check_not_pass(state, arg1):
     cl.check_not(state, arg1, msg="fail")

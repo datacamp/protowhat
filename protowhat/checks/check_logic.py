@@ -99,23 +99,19 @@ def check_or(state, *tests):
             )
     """
     success = False
-    failures = []
+    first_failure = None
 
     for test in iter_tests(tests):
         try:
             multi(state, test)
             success = True
         except TestFail as e:
-            failures.append(e)
+            if not first_failure:
+                first_failure = e
         if success:
             return state  # todo: add test
 
-    # todo: multiple short checks with multi inside check_or
-    best_attempt = sorted(
-        failures, key=lambda exception: -len(exception.state_history)
-    )[0]
-
-    raise best_attempt
+    raise first_failure
 
 
 def check_correct(state, check, diagnose):
