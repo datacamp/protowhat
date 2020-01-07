@@ -19,6 +19,8 @@ class Failure(Exception):
     throwing = False
 
     def __init__(self, feedback: Feedback, state_history: List["State"]):
+        if not isinstance(feedback, Feedback):
+            raise ValueError("Use the from_message method")
         super().__init__(feedback)
         self.feedback = feedback
         self.state_history = state_history
