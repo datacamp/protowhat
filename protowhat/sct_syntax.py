@@ -47,9 +47,11 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
             error = exception
             # TODO: add debug information to student failure in correct environment
             # Prevent double debugging
+            # - by a manual debug call
+            # - by a logic function capturing an inner debug (keeping only the debug conclusion)
             should_debug = (isinstance(error, InstructorError)) and get_check_name(
                 check
-            ) != "_debug"
+            ) not in ["_debug", "multi", "check_correct", "check_or", "check_not"]
 
             if should_debug:
                 # Try creating a child state to set creator info
