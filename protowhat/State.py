@@ -1,4 +1,5 @@
 from copy import copy
+from typing import Union
 
 from protowhat.selectors import DispatcherInterface
 from protowhat.Feedback import Feedback, FeedbackComponent
@@ -160,7 +161,7 @@ class State:
             full_code_position,
         )
 
-    def to_child(self, append_message=None, **kwargs):
+    def to_child(self, append_message: Union[str, FeedbackComponent] = None, **kwargs):
         """Basic implementation of returning a child state"""
 
         bad_parameters = set(kwargs) - set(self.parameters)
@@ -173,7 +174,9 @@ class State:
             if isinstance(append_message, str):
                 append_message = FeedbackComponent(append_message)
             else:
-                raise ValueError("append_message should be a FeedbackComponent or a string")
+                raise ValueError(
+                    "append_message should be a FeedbackComponent or a string"
+                )
         kwargs["feedback_context"] = append_message
         kwargs["creator"] = {"type": "to_child", "args": {"state": self}}
 
