@@ -91,7 +91,9 @@ class State:
     @property
     def parent_state(self):
         if self.creator is not None:
-            return self.creator["args"]["state"]
+            creator_args = self.creator.get("args")
+            if creator_args:
+                return creator_args.get("state")
 
     @property
     def is_root(self):
