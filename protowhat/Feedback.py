@@ -5,9 +5,17 @@ from jinja2 import Template
 
 class FeedbackComponent:
     def __init__(self, feedback: str, kwargs=None, append=True):
-        self.feedback = feedback
+        self.feedback = feedback  # TODO: message | feedback | ...
         self.kwargs = kwargs or {}
         self.append = append
+
+    @property
+    def message(self):
+        return self.feedback
+
+    @message.setter
+    def message(self, message):
+        self.feedback = message
 
     def __repr__(self):
         return "<{} {}>".format(self.__class__.__name__, repr(vars(self)))
