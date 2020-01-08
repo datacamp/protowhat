@@ -1,3 +1,5 @@
+from typing import Union
+
 from protowhat.Feedback import FeedbackComponent
 
 
@@ -14,7 +16,7 @@ class Test:
         result (bool): True if the test succeed, False if it failed. None if it hasn't been tested yet.
     """
 
-    def __init__(self, feedback):
+    def __init__(self, feedback: Union[str, FeedbackComponent]):
         """
         Initialize the standard test.
 
@@ -27,7 +29,7 @@ class Test:
             self.feedback = FeedbackComponent(feedback)
         else:
             raise TypeError(
-                "When creating a test, specify either a string or a Feedback object"
+                "When creating a test, specify either a string or a FeedbackComponent object"
             )
 
         self.result = None
