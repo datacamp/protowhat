@@ -69,7 +69,7 @@ def link_to_state(check: Callable[..., State]) -> Callable[..., State]:
             ba.apply_defaults()
             new_state.creator = {
                 "type": get_check_name(check),
-                "args": {**new_state.creator.get("args", {}), **ba.arguments},
+                "args": {**(new_state.creator or {}).get("args", {}), **ba.arguments},
             }
 
         if error:
