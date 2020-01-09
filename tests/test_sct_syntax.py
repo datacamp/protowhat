@@ -1,5 +1,8 @@
+import re
+
 import pytest
 
+from protowhat.failure import InstructorError
 from tests.helper import state, dummy_checks
 from protowhat.State import State
 from protowhat.sct_syntax import (
@@ -250,7 +253,9 @@ def test_state_linking_root_creator(state):
     def diagnose(end_state):
         assert end_state.creator is None
 
-    Ex(state) >> LazyChain(chainable_functions={"diagnose": diagnose}).diagnose()
+    TestF = LazyChainStart({"diagnose": diagnose})
+
+    Ex(state) >> TestF().diagnose()
 
 
 def test_state_linking_root_creator_noop(state, dummy_checks):
@@ -259,7 +264,8 @@ def test_state_linking_root_creator_noop(state, dummy_checks):
 
     sct_dict = {"diagnose": diagnose, **dummy_checks}
     TestEx = ExGen(sct_dict, state)
-    TestEx().noop() >> LazyChain(chainable_functions=sct_dict).diagnose()
+    TestF = LazyChainStart(sct_dict)
+    TestEx().noop() >> TestF().diagnose()
 
 
 def test_state_linking_root_creator_child_state(state, dummy_checks):
@@ -272,23 +278,96 @@ def test_state_linking_root_creator_child_state(state, dummy_checks):
 
     sct_dict = {"diagnose": diagnose, **dummy_checks}
     TestEx = ExGen(sct_dict, state)
-    TestEx().child_state() >> LazyChain(chainable_functions=sct_dict).diagnose()
+    TestF = LazyChainStart(sct_dict)
+    TestEx().child_state() >> TestF().diagnose()
+
+
+def test_dynamic_registration(state, dummy_checks):
+    diagnose_calls = 0
+
+    @state_dec_gen(dummy_checks)
+    def diagnose(end_state):
+        assert end_state.state_history[0] is state
+        nonlocal diagnose_calls
+        diagnose_calls += 1
+
+    TestEx = ExGen(dummy_checks, state)
+    TestF = LazyChainStart(dummy_checks)
+
+    TestEx.register_chainable_function(diagnose)
+
+    TestEx().diagnose()
+    TestEx() >> TestF().diagnose()
+    TestEx() >> diagnose()
+    assert diagnose_calls == 3
+
+    TestEx().diagnose().noop()
+    TestEx() >> TestF().diagnose().noop()
+    TestEx() >> diagnose().noop()
+    assert diagnose_calls == 6
+
+    TestEx().child_state().diagnose()
+
+
+def test_dynamic_registration_named(state, dummy_checks):
+    diagnose_calls = 0
+
+    @state_dec_gen(dummy_checks)
+    def diagnose(end_state):
+        assert end_state.state_history[0] is state
+        nonlocal diagnose_calls
+        diagnose_calls += 1
+
+    TestEx = ExGen(dummy_checks, state)
+    TestF = LazyChainStart(dummy_checks)
+
+    TestEx.register_chainable_function(diagnose, "test123")
+
+    TestEx().test123()
+    TestEx() >> TestF().test123()
+    TestEx() >> diagnose()
+    assert diagnose_calls == 3
+
+    with pytest.raises(AttributeError):
+        TestEx().diagnose()
+
+    with pytest.raises(NameError):
+        TestEx() >> test123()
+
+
+def test_dynamic_registration_raising(state, dummy_checks):
+    @state_dec_gen(dummy_checks)
+    def diagnose(_):
+        raise InstructorError.from_message("problem")
+
+    TestEx = ExGen(dummy_checks, state)
+    TestEx.register_chainable_function(diagnose)
+
+    with pytest.raises(InstructorError) as e:
+        TestEx().diagnose()
+
+    # If calls with a state argument in state_dec would be decorated with link_to_state,
+    # there would be a double link_to_state call when an sct decorated with state_dec
+    # is registered for chaining
+    assert len(re.findall("Debug", str(e.value))) == 1
+    assert len(e.value.state_history) == 2
 
 
 def test_sct_reflection(dummy_checks):
-    def diagnose(state):
+    def diagnose(_):
         raise RuntimeError("This is not run")
 
     sct_dict = {"diagnose": diagnose, **dummy_checks}
     Ex = ExGen(sct_dict, None, strict=False)
+    F = LazyChainStart(sct_dict)
 
     chain_part_1 = Ex().noop().child_state()
     assert str(chain_part_1) == "child_state()"
 
-    chain_part_2 = LazyChain(chainable_functions=sct_dict).diagnose().fail()
+    chain_part_2 = F().diagnose().fail()
     assert str(chain_part_2) == "diagnose().fail()"
 
-    chain_part_3 = LazyChain(chainable_functions=sct_dict).noop()
+    chain_part_3 = F().noop()
     assert str(chain_part_3) == "noop()"
 
     chain_part_2_and_3 = chain_part_2 >> chain_part_3
@@ -307,11 +386,12 @@ def test_sct_reflection_lazy(dummy_checks):
 
     sct_dict = {"diagnose": diagnose, **dummy_checks}
     Ex = LazyChainStart(sct_dict)
+    F = LazyChainStart(sct_dict)
 
     chain_part_1 = Ex().noop().child_state()
     assert str(chain_part_1) == "noop().child_state()"
 
-    chain_part_2 = LazyChain(chainable_functions=sct_dict).diagnose().fail()
+    chain_part_2 = F().diagnose().fail()
     assert str(chain_part_2) == "diagnose().fail()"
 
     chain = chain_part_1 >> chain_part_2
