@@ -290,18 +290,22 @@ def get_chain_ends(chain: Chain) -> List[Chain]:
 class ChainStart:
     """Create new chains and keep track of the created chains"""
 
-    def __init__(self, sct_dict: Dict[str, Callable]):
+    def __init__(self, chainable_functions: Dict[str, Callable]):
         self.chain_roots = []
-        self.sct_dict = sct_dict
+        self.chainable_functions = chainable_functions
 
     def __call__(self) -> Chain:
         """Create a new chains and store it"""
         raise NotImplementedError()
 
+    def register_chainable_function(self, function: Callable, name: str = None):
+        name = name if name is not None else function.__name__
+        self.chainable_functions[name] = function
+
 
 class LazyChainStart(ChainStart):
     def __call__(self) -> LazyChain:
-        chain_root = LazyChain(chainable_functions=self.sct_dict)
+        chain_root = LazyChain(chainable_functions=self.chainable_functions)
         self.chain_roots.append(chain_root)
 
         return chain_root
@@ -352,7 +356,8 @@ class ExGen(ChainStart):
             raise Exception("explicitly pass state to Ex, or set Ex.root_state")
 
         chain_root = EagerChain(
-            None, chainable_functions=self.sct_dict, state=state or self.root_state
+            chainable_functions=self.chainable_functions,
+            state=state or self.root_state,
         )
         self.chain_roots.append(chain_root)
 
