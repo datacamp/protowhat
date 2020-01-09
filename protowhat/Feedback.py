@@ -4,18 +4,10 @@ from jinja2 import Template
 
 
 class FeedbackComponent:
-    def __init__(self, feedback: str, kwargs=None, append=True):
-        self.feedback = feedback  # TODO: message | feedback | ...
+    def __init__(self, message: str, kwargs: dict = None, append=True):
+        self.message = message
         self.kwargs = kwargs or {}
         self.append = append
-
-    @property
-    def message(self):
-        return self.feedback
-
-    @message.setter
-    def message(self, message):
-        self.feedback = message
 
     def __repr__(self):
         return "<{} {}>".format(self.__class__.__name__, repr(vars(self)))
@@ -89,11 +81,11 @@ class Feedback:
                 **getattr(d, "kwargs"),
             }
             # don't bother appending if there is no message
-            if not getattr(d, "feedback"):
+            if not getattr(d, "message"):
                 continue
             else:
                 # TODO: rendering is slow in tests (40% of test time)
-                out = Template(d.feedback.replace("__JINJA__:", "")).render(tmp_kwargs)
+                out = Template(d.message.replace("__JINJA__:", "")).render(tmp_kwargs)
                 out_list.append(out)
 
         return "".join(out_list)
