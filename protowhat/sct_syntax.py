@@ -1,12 +1,13 @@
 import inspect
 import copy
 import builtins
-from contextlib import contextmanager
 from functools import wraps, reduce, partial
-from typing import Union, Type, Callable, Dict, Any
+from importlib import import_module
+from typing import Union, Type, Callable, Dict, Any, Tuple
 
 from protowhat.Reporter import Reporter
 from protowhat.State import State
+from protowhat.utils import get_class_parameters
 
 
 def state_dec_gen(state_cls: Type[State], attr_scts):
@@ -168,7 +169,7 @@ class ExGen:
 Ex = ExGen(None, {})
 
 
-def get_checks_dict(checks_module):
+def get_checks_dict(checks_module) -> Dict[str, Callable]:
     return {
         k: v
         for k, v in vars(checks_module).items()
@@ -178,7 +179,9 @@ def get_checks_dict(checks_module):
     }
 
 
-def create_sct_context(state_cls: Type[State], sct_dict, root_state=None):
+def create_sct_context(
+    state_cls: Type[State], sct_dict, root_state: State = None
+) -> Dict[str, Callable]:
     """
     Create the globals that will be available when running the SCT.
 
@@ -204,105 +207,93 @@ def create_sct_context(state_cls: Type[State], sct_dict, root_state=None):
 
 
 def create_embed_state(
-    parent_state: State,
     xstate: Type[State],
-    state_args: Dict[str, Any] = None,
+    parent_state: State,
+    derive_custom_state_args: Callable[[State], Dict[str, Any]] = None,
     highlight_offset: dict = None,
-):
+) -> State:
     """
     Create the state for running checks in the embedded technology.
 
     This function also connects the created state with the state of the host technology.
 
     Args:
-        parent_state: state of the host technology to derive the embedded state from
         xstate: the State class of the embedded technology
-        state_args: extra arguments to pass to the constructor of the embedded state
+        parent_state: state of the host technology to derive the embedded state from
+        derive_custom_state_args: function to calculate instructor ovextra arguments to pass to the constructor of the embedded state
         highlight_offset: position of the embedded code in the student code
 
     Returns:
         an instance of xstate
     """
-    # find all arguments the xstate constructor can handle
-    embedded_state_params = [
-        param
-        for cls in [xstate, *xstate.__bases__]
-        for param in inspect.signature(cls).parameters
-    ]
-
     # gather the kwargs the xstate will be created with
     args = {}
 
+    # find all arguments the xstate constructor can handle
+    embedded_state_parameters = getattr(
+        xstate, "parameters", get_class_parameters(xstate)
+    )
+
     # copy all allowed arguments from the parent state
-    for arg in embedded_state_params:
+    for arg in embedded_state_parameters:
         if hasattr(parent_state, arg):
             args[arg] = getattr(parent_state, arg)
 
-    # manually add / override arguments and
     # configure the reporter to collaborate with the parent state reporter
-    args.update(
-        {
-            **(state_args or {}),
-            "reporter": Reporter(
-                parent_state.reporter, highlight_offset=highlight_offset or {}
-            ),
-        }
+    args["reporter"] = Reporter(
+        parent_state.reporter, highlight_offset=highlight_offset or {}
     )
 
-    return xstate(**args)
+    custom_args = (
+        derive_custom_state_args(parent_state) if derive_custom_state_args else {}
+    )
+
+    # manually add / override arguments
+    args.update(**custom_args)
+
+    embed_state = xstate(**args)
+    # TODO: other params? set manually through chain constructor or add State args
+    # to pass: path, debug; don't pass: highlight, ast_dispatcher, params
+    embed_state.creator = {"type": "embed", "args": {"state": parent_state}}
+
+    return embed_state
 
 
-def create_embed_context(context: Chain, technology: str, **kwargs):
+def create_embed_context(technology: str, context: Chain, **kwargs):
     """
     Create the globals that will be available when running the checks for the embedded technology.
 
     Extra keyword arguments are passed to the constructor of the State for the embedded technology.
 
     Args:
+        technology: the name of the embedded technology (the x in xwhat)
         context: the Chain of the host technology
             the checks for the embedded technology will use as starting point
-        technology: the name of the embedded technology (the x in xwhat)
 
     Returns:
-        dict: the globals available to the SCT code for the embedded technology
+        dict: the variables available to the SCT code for the embedded technology
     """
     parent_state = context._state
 
-    xwhat = __import__("{}what".format(technology))
+    xwhat = import_module("{}what".format(technology))
+    xwhat_checks = import_module("{}what.checks".format(technology))
+    xwhat_state = xwhat.State.State
 
-    xstate = xwhat.State.State
+    xwhat_scts = get_checks_dict(xwhat_checks)
 
-    embedded_state = create_embed_state(parent_state, xstate, **kwargs)
+    embed_state = create_embed_state(xwhat_state, parent_state, **kwargs)
 
-    return create_sct_context(
-        xstate, xwhat.sct_syntax.sct_dict, root_state=embedded_state
-    )
+    return create_sct_context(xwhat_state, xwhat_scts, root_state=embed_state)
 
 
-def get_embed_chain_constructors(*args, **kwargs):
+def get_embed_chain_constructors(*args, **kwargs) -> Tuple[Type, Type]:
     """
     Get the chain constructors for the embedded technology.
 
     This is a wrapper around create_embed_context
+
+    Returns:
+        tuple: Ex and F for the embedded xwhat
     """
     new_context = create_embed_context(*args, **kwargs)
     return new_context["Ex"], new_context["F"]
-
-
-@contextmanager
-def embed_xwhat(*args, **kwargs):
-    """
-    This context manager temporarily updates the globals to be those for the embedded technology.
-    The context manager also returns the chain constructors for the embedded technology
-
-    This is a wrapper around create_embed_context
-    """
-    globals_backup = globals().copy()
-
-    new_context = create_embed_context(*args, **kwargs)
-    EmbeddedEx = new_context["Ex"]
-    EmbeddedF = new_context["F"]
-
-    globals().update(new_context)
-    yield EmbeddedEx, EmbeddedF
-    globals().update(globals_backup)
