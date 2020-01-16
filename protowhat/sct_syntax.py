@@ -96,7 +96,7 @@ class ChainedCall:
         kwargs: Optional[dict] = None,
     ):
         """
-        Data for a function call that can be chained
+        This contains the data for a function call that can be chained
         This means the chain state should only be provided when calling.
         """
         self.callable = link_to_state(callable_)
@@ -106,6 +106,7 @@ class ChainedCall:
             self.validate()
 
     def validate(self):
+        """Can be used to check if the call data is valid without execution in the future."""
         pass
 
     def __call__(self, state: State) -> State:

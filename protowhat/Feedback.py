@@ -37,6 +37,11 @@ class Feedback:
 
     @classmethod
     def get_highlight_position(cls, highlight) -> Dict[str, int]:
+        """Get the position of the highlight object
+
+        This method can be customized in subclasses and
+        use class properties to do so if needed
+        """
         if hasattr(highlight, "get_position"):
             return highlight.get_position()
 
@@ -84,7 +89,7 @@ class Feedback:
             if not getattr(d, "message"):
                 continue
             else:
-                # TODO: rendering is slow in tests (40% of test time)
+                # This is slow (but it should only happen once for a submission)
                 out = Template(d.message.replace("__JINJA__:", "")).render(tmp_kwargs)
                 out_list.append(out)
 

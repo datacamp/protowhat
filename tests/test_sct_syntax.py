@@ -184,6 +184,7 @@ def test_dynamic_registration(state, dummy_checks):
 def test_dynamic_registration_named(state, dummy_checks):
     diagnose_calls = 0
 
+    # this makes diagnose a LazyChain wrapper
     @state_dec_gen(dummy_checks)
     def diagnose(end_state):
         assert end_state.state_history[0] is state
@@ -201,6 +202,7 @@ def test_dynamic_registration_named(state, dummy_checks):
     assert diagnose_calls == 3
 
     with pytest.raises(AttributeError):
+        # The function is registered with a given name (test123)
         TestEx().diagnose()
 
     with pytest.raises(NameError):

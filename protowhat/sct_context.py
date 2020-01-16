@@ -62,7 +62,7 @@ def create_embed_state(
     Args:
         xstate: the State class of the embedded technology
         parent_state: state of the host technology to derive the embedded state from
-        derive_custom_state_args: function to calculate instructor ovextra arguments to pass to the constructor of the embedded state
+        derive_custom_state_args: function to calculate instructor extra arguments to pass to the constructor of the embedded state
 
     Returns:
         an instance of xstate

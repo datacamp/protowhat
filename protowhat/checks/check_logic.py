@@ -76,9 +76,6 @@ def check_not(state, *tests, msg):
 def check_or(state, *tests):
     """Test whether at least one SCT passes.
 
-    If all of the tests fail, the feedback of the first test that could zoom in the most
-    will be presented to the student.
-
     Args:
         state: State instance describing student and solution code, can be omitted if used with Ex()
         tests: one or more sub-SCTs to run
