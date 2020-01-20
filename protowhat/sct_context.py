@@ -98,16 +98,17 @@ def create_embed_state(
     return embed_state
 
 
-def create_embed_context(technology: str, context: EagerChain, **kwargs):
+def create_embed_context(
+    technology: str, context: EagerChain, derive_custom_state_args=None
+):
     """
     Create the globals that will be available when running the checks for the embedded technology.
-
-    Extra keyword arguments are passed to the constructor of the State for the embedded technology.
 
     Args:
         technology: the name of the embedded technology (the x in xwhat)
         context: the Chain of the host technology
             the checks for the embedded technology will use as starting point
+        derive_custom_state_args: passed to create_embed_state
 
     Returns:
         dict: the variables available to the SCT code for the embedded technology
@@ -120,7 +121,9 @@ def create_embed_context(technology: str, context: EagerChain, **kwargs):
 
     xwhat_scts = get_checks_dict(xwhat_checks)
 
-    embed_state = create_embed_state(xwhat_state, parent_state, **kwargs)
+    embed_state = create_embed_state(
+        xwhat_state, parent_state, derive_custom_state_args
+    )
 
     return create_sct_context(xwhat_scts, root_state=embed_state)
 
