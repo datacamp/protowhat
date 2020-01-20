@@ -289,6 +289,7 @@ class ChainStart:
 
     def __init__(self, chainable_functions: Dict[str, Callable]):
         self.chain_roots = []
+        # not copied on purpose to have a dynamic function registry
         self.chainable_functions = chainable_functions
 
     def __call__(self) -> Chain:
@@ -296,6 +297,10 @@ class ChainStart:
         raise NotImplementedError()
 
     def register_chainable_function(self, function: Callable, name: str = None):
+        """This mutates the chainable_functions dictionary passed on init
+
+        This way all chains are aware of the extra function (Ex, F and decorated)
+        """
         name = name if name is not None else function.__name__
         self.chainable_functions[name] = function
 
