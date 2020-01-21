@@ -113,23 +113,20 @@ class ChainedCall:
         return self.callable(state, *self.args, **self.kwargs)
 
     def __str__(self):
-        if isinstance(self.callable, LazyChain):
-            return str(self.callable)
-        else:
-            return (
-                self.callable.__name__
-                + "("
-                + ", ".join(
-                    chain_iters(
-                        (str(arg) for arg in self.args),
-                        (
-                            "{}={}".format(kwarg, value)
-                            for kwarg, value in self.kwargs.items()
-                        ),
-                    )
+        return (
+            self.callable.__name__
+            + "("
+            + ", ".join(
+                chain_iters(
+                    (str(arg) for arg in self.args),
+                    (
+                        "{}={}".format(kwarg, value)
+                        for kwarg, value in self.kwargs.items()
+                    ),
                 )
-                + ")"
             )
+            + ")"
+        )
 
 
 class Chain:
