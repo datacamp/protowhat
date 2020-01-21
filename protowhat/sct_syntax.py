@@ -105,9 +105,9 @@ class ChainedCall:
         if self.strict:
             self.validate()
 
-    def validate(self):
+    def validate(self) -> bool:
         """Can be used to check if the call data is valid without execution in the future."""
-        pass
+        raise NotImplementedError
 
     def __call__(self, state: State) -> State:
         return self.callable(state, *self.args, **self.kwargs)
