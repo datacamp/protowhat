@@ -165,9 +165,7 @@ class Chain:
     def __getattr__(self, attr):
         chainable_functions = self.chainable_functions
         if attr not in chainable_functions:
-            if attr not in ("_history",):  # todo
-                raise AttributeError("No function named %s" % attr)
-            return self.__getattribute__(attr)
+            raise AttributeError("No function named %s" % attr)
         else:
             # in case someone does: a = chain.a; a(...); a(...)
             return ChainExtender(self, chainable_functions[attr])
