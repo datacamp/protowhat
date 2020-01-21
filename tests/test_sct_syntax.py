@@ -181,6 +181,43 @@ def test_dynamic_registration(state, dummy_checks):
     TestEx().child_state().diagnose()
 
 
+def test_multiple_dynamic_registrations(state, dummy_checks):
+    diagnose_calls = 0
+
+    state_dec = state_dec_gen(dummy_checks)
+
+    @state_dec
+    def diagnose1(end_state):
+        assert end_state.state_history[0] is state
+        nonlocal diagnose_calls
+        diagnose_calls += 1
+
+    @state_dec
+    def diagnose2(end_state):
+        assert end_state.state_history[0] is state
+        nonlocal diagnose_calls
+        diagnose_calls += 1
+
+    TestEx = ExGen(dummy_checks, state)
+    TestF = LazyChainStart(dummy_checks)
+
+    TestEx.register_chainable_function(diagnose1)
+    TestEx.register_chainable_function(diagnose2)
+
+    TestEx().diagnose1().diagnose2()
+    TestEx() >> TestF().diagnose1().diagnose2()
+    TestEx() >> diagnose1().diagnose2()
+    TestEx() >> diagnose1() >> diagnose2()
+    assert diagnose_calls == 8
+
+    TestEx().diagnose1().noop().diagnose2().noop()
+    TestEx() >> TestF().diagnose1().noop().diagnose2().noop()
+    TestEx() >> diagnose1().noop() >> diagnose2().noop()
+    assert diagnose_calls == 14
+
+    TestEx().child_state().diagnose1().diagnose2()
+
+
 def test_dynamic_registration_named(state, dummy_checks):
     diagnose_calls = 0
 
