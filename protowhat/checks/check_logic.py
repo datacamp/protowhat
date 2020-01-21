@@ -103,7 +103,7 @@ def check_or(state, *tests):
             multi(state, test)
             success = True
         except TestFail as e:
-            if not first_failure:
+            if first_failure is None:
                 first_failure = e
         if success:
             return state  # todo: add test
