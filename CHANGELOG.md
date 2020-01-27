@@ -2,6 +2,16 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 2.0.0
+
+- Refactor SCT syntax to be an execution graph and enable derived features
+- Split SCT syntax and SCT context code
+- Refactor exceptions to share an interface to simplify logic
+- Refactor feedback to be centralized and built from formalized components
+- Add support for embedding xwhats
+- Add `prepare_validation` helper for checking bash history
+- Add autodebug (`_debug` will be invoked automatically for instructor errors)
+
 ## 1.14.1
 
 - Fix final feedback message after append_messsage(s) from having duplicate information
