@@ -78,19 +78,19 @@ class Feedback:
             msgs = msgs[-3:]
 
         # format messages in list, by iterating over previous, current, and next message
-        for prev_d, d, next_d in zip([None, *msgs[:-1]], msgs, [*msgs[1:], None]):
+        for prev_msg, msg, next_msg in zip([None, *msgs[:-1]], msgs, [*msgs[1:], None]):
             tmp_kwargs = {
-                "parent": getattr(prev_d, "kwargs", None),
-                "child": getattr(next_d, "kwargs", None),
-                "this": getattr(d, "kwargs"),
-                **getattr(d, "kwargs"),
+                "parent": getattr(prev_msg, "kwargs", None),
+                "child": getattr(next_msg, "kwargs", None),
+                "this": getattr(msg, "kwargs"),
+                **getattr(msg, "kwargs"),
             }
             # don't bother appending if there is no message
-            if not getattr(d, "message"):
+            if not getattr(msg, "message"):
                 continue
             else:
                 # This is slow (but it should only happen once for a submission)
-                out = Template(d.message.replace("__JINJA__:", "")).render(tmp_kwargs)
+                out = Template(msg.message.replace("__JINJA__:", "")).render(tmp_kwargs)
                 out_list.append(out)
 
         return "".join(out_list)
