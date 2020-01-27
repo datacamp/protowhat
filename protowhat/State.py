@@ -4,7 +4,7 @@ from jinja2 import Template
 from protowhat.selectors import DispatcherInterface
 from protowhat.Feedback import Feedback, InstructorError
 from protowhat.Test import Fail, Test, TestFail
-from protowhat.utils import _debug
+from protowhat.utils import _debug, parameters_attr
 
 
 class DummyDispatcher(DispatcherInterface):
@@ -27,6 +27,7 @@ class DummyDispatcher(DispatcherInterface):
         return "code"
 
 
+@parameters_attr
 class State:
     def __init__(
         self,
@@ -47,11 +48,9 @@ class State:
         ast_dispatcher=None,
     ):
         args = locals().copy()
-        self.params = list()
 
         for k, v in args.items():
             if k != "self":
-                self.params.append(k)
                 setattr(self, k, v)
 
         self.messages = messages if messages else []
@@ -156,9 +155,11 @@ class State:
     def to_child(self, append_message="", **kwargs):
         """Basic implementation of returning a child state"""
 
-        bad_pars = set(kwargs) - set(self.params)
-        if bad_pars:
-            raise ValueError("Invalid init params for State: %s" % ", ".join(bad_pars))
+        bad_parameters = set(kwargs) - set(self.parameters)
+        if bad_parameters:
+            raise ValueError(
+                "Invalid init parameters for State: %s" % ", ".join(bad_parameters)
+            )
 
         child = copy(self)
         for k, v in kwargs.items():
