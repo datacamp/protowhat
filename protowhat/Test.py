@@ -1,11 +1,6 @@
-from protowhat.Feedback import Feedback
+from typing import Union
 
-
-class TestFail(Exception):
-    def __init__(self, feedback, payload):
-        super().__init__(feedback.message)
-        self.feedback = feedback
-        self.payload = payload
+from protowhat.Feedback import FeedbackComponent
 
 
 class Test:
@@ -21,20 +16,20 @@ class Test:
         result (bool): True if the test succeed, False if it failed. None if it hasn't been tested yet.
     """
 
-    def __init__(self, feedback):
+    def __init__(self, feedback: Union[str, FeedbackComponent]):
         """
         Initialize the standard test.
 
         Args:
             feedback: string or Feedback object
         """
-        if issubclass(type(feedback), Feedback):
+        if issubclass(type(feedback), FeedbackComponent):
             self.feedback = feedback
         elif issubclass(type(feedback), str):
-            self.feedback = Feedback(feedback)
+            self.feedback = FeedbackComponent(feedback)
         else:
             raise TypeError(
-                "When creating a test, specify either a string or a Feedback object"
+                "When creating a test, specify either a string or a FeedbackComponent object"
             )
 
         self.result = None

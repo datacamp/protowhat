@@ -1,10 +1,11 @@
 from copy import copy
-from jinja2 import Template
+from typing import Union
 
 from protowhat.selectors import DispatcherInterface
-from protowhat.Feedback import Feedback, InstructorError
-from protowhat.Test import Fail, Test, TestFail
-from protowhat.utils import _debug, parameters_attr
+from protowhat.Feedback import Feedback, FeedbackComponent
+from protowhat.Test import Fail, Test
+from protowhat.failure import TestFail, debugger, InstructorError
+from protowhat.utils import parameters_attr
 
 
 class DummyDispatcher(DispatcherInterface):
@@ -29,6 +30,8 @@ class DummyDispatcher(DispatcherInterface):
 
 @parameters_attr
 class State:
+    feedback_cls = Feedback
+
     def __init__(
         self,
         student_code,
@@ -40,20 +43,20 @@ class State:
         solution_result,
         reporter,
         force_diagnose=False,
+        highlight_offset=None,
         highlighting_disabled=False,
-        messages=None,
+        feedback_context=None,
         creator=None,
         solution_ast=None,
         student_ast=None,
         ast_dispatcher=None,
     ):
         args = locals().copy()
+        self.debug = False
 
         for k, v in args.items():
             if k != "self":
                 setattr(self, k, v)
-
-        self.messages = messages if messages else []
 
         if ast_dispatcher is None:
             self.ast_dispatcher = self.get_dispatcher()
@@ -61,23 +64,24 @@ class State:
         # Parse solution and student code
         # if possible, not done yet and wanted (ast arguments not False)
         if isinstance(self.solution_code, str) and self.solution_ast is None:
-            self.solution_ast = self.parse(self.solution_code, test=False)
+            with debugger(self):
+                self.solution_ast = self.parse(self.solution_code)
         if isinstance(self.student_code, str) and self.student_ast is None:
             self.student_ast = self.parse(self.student_code)
 
-    def parse(self, text, test=True):
+    def parse(self, text):
         result = None
         if self.ast_dispatcher:
             try:
                 result = self.ast_dispatcher.parse(text)
             except self.ast_dispatcher.ParseError as e:
-                if test:
-                    self.report(e.message)
-                else:
-                    raise InstructorError(
+                if self.debug:
+                    self.report(
                         "Something went wrong when parsing PEC or solution code: %s"
                         % str(e)
                     )
+                else:
+                    self.report(e.message)
 
         return result
 
@@ -87,7 +91,9 @@ class State:
     @property
     def parent_state(self):
         if self.creator is not None:
-            return self.creator["args"]["state"]
+            creator_args = self.creator.get("args")
+            if creator_args:
+                return creator_args.get("state")
 
     @property
     def is_root(self):
@@ -95,11 +101,7 @@ class State:
 
     @property
     def state_history(self):
-        history = [self]
-        while history[-1].parent_state is not None:
-            history.append(history[-1].parent_state)
-
-        return list(reversed(history))
+        return getattr(self.parent_state, "state_history", []) + [self]
 
     def get_ast_path(self):
         rev_checks = filter(
@@ -130,29 +132,38 @@ class State:
         except StopIteration:
             return self.ast_dispatcher.describe(self.student_ast, "{node_name}")
 
-    def report(self, feedback: str):
-        test_feedback = Feedback(feedback, self)
-        if test_feedback.highlight is None and self is not getattr(
-            self, "root_state", None
-        ):
-            test_feedback.highlight = self.student_ast
+    def report(self, feedback: str, kwargs=None, append=True):
+        test_feedback = FeedbackComponent(feedback, kwargs, append)
         test = Fail(test_feedback)
 
         return self.do_test(test)
 
     def do_test(self, test: Test):
-        result, feedback = self.reporter.do_test(test)
+        result, test_feedback = self.reporter.do_test(test)
         if result is False:
-            if getattr(self, "debug", False):
-                setattr(self, "debug", False)  # prevent loop
-                _debug(self)
-            raise TestFail(feedback, self.reporter.build_failed_payload(feedback))
-        return result, feedback
+            failure_type = InstructorError if self.debug else TestFail
+            raise failure_type(self.get_feedback(test_feedback), self.state_history)
+        return result, test_feedback
 
     def do_tests(self, tests):
         return [self.do_test(test) for test in tests]
 
-    def to_child(self, append_message="", **kwargs):
+    def get_feedback(self, conclusion):
+        full_code_position = self.feedback_cls.get_highlight_position(
+            self.state_history[0].student_ast
+        )
+
+        return self.feedback_cls(
+            conclusion,
+            [state.feedback_context for state in self.state_history],
+            getattr(self, "highlight", self.student_ast),
+            getattr(self, "path", None),
+            self.highlighting_disabled,
+            self.highlight_offset,
+            full_code_position,
+        )
+
+    def to_child(self, append_message: Union[str, FeedbackComponent] = None, **kwargs):
         """Basic implementation of returning a child state"""
 
         bad_parameters = set(kwargs) - set(self.parameters)
@@ -161,44 +172,18 @@ class State:
                 "Invalid init parameters for State: %s" % ", ".join(bad_parameters)
             )
 
+        if append_message and not isinstance(append_message, FeedbackComponent):
+            if isinstance(append_message, str):
+                append_message = FeedbackComponent(append_message)
+            else:
+                raise ValueError(
+                    "append_message should be a FeedbackComponent or a string"
+                )
+        kwargs["feedback_context"] = append_message
+        kwargs["creator"] = {"type": "to_child", "args": {"state": self}}
+
         child = copy(self)
         for k, v in kwargs.items():
             setattr(child, k, v)
 
-        # append messages
-        if not isinstance(append_message, dict):
-            append_message = {"msg": append_message, "kwargs": {}}
-        child.messages = [*self.messages, append_message]
-
         return child
-
-    def build_message(self, tail_msg="", fmt_kwargs=None, append=True):
-        if not fmt_kwargs:
-            fmt_kwargs = {}
-        out_list = []
-        # add trailing message to msg list
-        msgs = self.messages[:] + [{"msg": tail_msg, "kwargs": fmt_kwargs}]
-
-        # format messages in list, by iterating over previous, current, and next message
-        for prev_d, d, next_d in zip([{}, *msgs[:-1]], msgs, [*msgs[1:], {}]):
-            tmp_kwargs = {
-                "parent": prev_d.get("kwargs"),
-                "child": next_d.get("kwargs"),
-                "this": d["kwargs"],
-                **d["kwargs"],
-            }
-            # don't bother appending if there is no message
-            if not d or not d["msg"]:
-                continue
-            # TODO: rendering is slow in tests (40% of test time)
-            out = Template(d["msg"].replace("__JINJA__:", "")).render(tmp_kwargs)
-            out_list.append(out)
-
-        # if highlighting info is available, don't put all expand messages
-        if getattr(self, "highlight", None) and not self.highlighting_disabled:
-            out_list = out_list[-3:]
-
-        if append:
-            return "".join(out_list)
-        else:
-            return out_list[-1]

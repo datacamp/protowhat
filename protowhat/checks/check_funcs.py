@@ -39,7 +39,7 @@ def requires_ast(f):
 
 @requires_ast
 def check_node(
-    state, name, index=0, missing_msg=None, priority=None, should_append_msg=False
+    state, name, index=0, missing_msg=None, priority=None
 ):
     """Select a node from abstract syntax tree (AST), using its name and index position.
 
@@ -52,8 +52,6 @@ def check_node(
                   descend into other AST nodes during the search. Higher priority nodes descend
                   into lower priority. Currently, the only important part of priority is that
                   setting a very high priority (e.g. 99) will search every node.
-        should_append_msg: prepend the auto generated missing_msg with the previous append_messages.
-
 
     :Example:
         If both the student and solution code are.. ::
@@ -87,27 +85,25 @@ def check_node(
     except IndexError:
         # use speaker on ast dialect module to get message, or fall back to generic
         ast_path = state.get_ast_path() or "highlighted code"
-        _msg = state.ast_dispatcher.describe(
+        msg = state.ast_dispatcher.describe(
             sol_stmt, missing_msg, index=index, ast_path=ast_path
         )
-        if _msg is None:
-            _msg = MSG_CHECK_FALLBACK
-        if should_append_msg and not has_custom_message:
-            _msg = state.build_message(_msg)
-        state.report(_msg)
+        if msg is None:
+            msg = MSG_CHECK_FALLBACK
+        if has_custom_message:
+            state.report(msg, append=False)
+        state.report(msg)
 
-    append_message = None
-    if should_append_msg:
-        append_message = state.ast_dispatcher.describe(
-            sol_stmt, DEFAULT_APPEND_MSG, index=index
-        )
+    append_message = state.ast_dispatcher.describe(
+        sol_stmt, DEFAULT_APPEND_MSG, index=index
+    )
     return state.to_child(
         student_ast=stu_stmt, solution_ast=sol_stmt, append_message=append_message
     )
 
 
 @requires_ast
-def check_edge(state, name, index=0, missing_msg=None, should_append_msg=False):
+def check_edge(state, name, index=0, missing_msg=None):
     """Select an attribute from an abstract syntax tree (AST) node, using the attribute name.
 
     Args:
@@ -115,7 +111,6 @@ def check_edge(state, name, index=0, missing_msg=None, should_append_msg=False):
         name: the name of the attribute to select from current AST node.
         index: entry to get from a list field. If too few entires, will fail with missing_msg.
         missing_msg: feedback message if attribute is not in student AST.
-        should_append_msg: prepend the auto generated missing_msg with the previous append_messages.
 
     :Example:
         If both the student and solution code are.. ::
@@ -160,21 +155,19 @@ def check_edge(state, name, index=0, missing_msg=None, should_append_msg=False):
     try:
         stu_attr = select(name, state.student_ast)
     except:
-        if should_append_msg and not has_custom_message:
-            _msg = state.build_message(_msg)
+        if has_custom_message:
+            state.report(_msg, append=False)
         state.report(_msg)
 
     # fail if attribute exists, but is none only for student
     if stu_attr is None and sol_attr is not None:
-        if should_append_msg and not has_custom_message:
-            _msg = state.build_message(_msg)
+        if has_custom_message:
+            state.report(_msg, append=False)
         state.report(_msg)
 
-    append_message = None
-    if should_append_msg:
-        append_message = state.ast_dispatcher.describe(
-            state.student_ast, "Check the {field_name}. ", index=index, field=name
-        )
+    append_message = state.ast_dispatcher.describe(
+        state.student_ast, "Check the {field_name}. ", index=index, field=name
+    )
     return state.to_child(
         student_ast=stu_attr, solution_ast=sol_attr, append_message=append_message
     )
@@ -299,7 +292,7 @@ def has_equal_ast(
 
     """
     has_custom_message = bool(incorrect_msg)
-    if incorrect_msg is None:  # No custom message
+    if not has_custom_message:
         if should_append_msg:  # Remove the ast_path mention because we are prepending.
             incorrect_msg = "{extra}"
         else:
@@ -335,9 +328,9 @@ def has_equal_ast(
         else "Something is missing.",
     )
     if (exact and (sol_rep != stu_rep)) or (not exact and (sol_rep not in stu_rep)):
-        if should_append_msg and not has_custom_message:
-            _msg = state.build_message(_msg)
-        state.report(_msg)
+        if should_append_msg:
+            state.report(_msg)
+        state.report(_msg, append=False)
 
     return state
 

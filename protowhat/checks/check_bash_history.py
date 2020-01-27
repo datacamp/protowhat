@@ -2,7 +2,8 @@ import os
 import re
 
 from pathlib import Path
-from protowhat.Feedback import InstructorError
+
+from protowhat.failure import InstructorError, debugger
 
 # env vars
 BASH_HISTORY_PATH_ENV = "BASH_HISTORY_PATH"
@@ -41,9 +42,7 @@ def get_bash_history_info():
             Path(os.environ[BASH_HISTORY_INFO_PATH_ENV]).read_text()
         )
     except FileNotFoundError:
-        raise InstructorError(
-            "`update_bash_history_info` wasn't called"
-        )
+        raise InstructorError.from_message("`update_bash_history_info` wasn't called")
 
     return old_history_length
 
@@ -169,9 +168,10 @@ def has_command(state, pattern, msg, fixed=False, commands=None):
     if not commands:
         state.report("Looking for an executed shell command, we didn't find any.")
     if not state.is_root:
-        raise InstructorError(
-            "`has_command()` should only be called from the root state, `Ex()`."
-        )
+        with debugger(state):
+            state.report(
+                "`has_command()` should only be called from the root state, `Ex()`."
+            )
 
     correct = False
     for command in commands:
