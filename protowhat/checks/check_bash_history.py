@@ -2,8 +2,11 @@ import os
 import re
 
 from pathlib import Path
+from subprocess import run
+from typing import List, Optional
 
 from protowhat.failure import InstructorError, debugger
+from protowhat.State import State
 
 # env vars
 BASH_HISTORY_PATH_ENV = "BASH_HISTORY_PATH"
@@ -182,6 +185,39 @@ def has_command(state, pattern, msg, fixed=False, commands=None):
 
     if not correct:
         state.report(msg)
+
+    return state
+
+
+def prepare_validation(
+    state: State, commands: List[str], bash_history_path: Optional[str] = None
+) -> State:
+    """Let the exercise validation know what shell commands are required to complete the exercise
+
+    Args:
+        state: State instance describing student and solution code. Can be omitted if used with Ex().
+        commands: List of strings that a student is expected to execute
+        bash_history_path (str | Path): path to the bash history file
+
+    :Example:
+
+        The goal of an exercise is to run a build and check the output.
+
+        At the start of the SCT, put::
+
+            Ex().prepare_validation(["make", "cd build", "ls"])
+
+        Further down you can now use ``has_command``.
+
+    """
+    if state.force_diagnose:
+        for command in commands:
+            run(command, shell=True)
+
+        if bash_history_path is None:
+            bash_history_path = os.environ[BASH_HISTORY_PATH_ENV]
+        with open(bash_history_path, mode="a", encoding="utf-8") as f:
+            f.write("\n".join(commands) + "\n")
 
     return state
 

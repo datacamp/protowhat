@@ -14,7 +14,7 @@ from protowhat.checks.check_bash_history import (
     get_bash_history_info,
     get_bash_history,
     has_command,
-)
+    prepare_validation)
 
 
 @contextmanager
@@ -162,3 +162,12 @@ def test_has_command_custom_commands(state):
         has_command(
             state, "(a|b)+", "a and b are the best letters", commands=["old command"]
         )
+
+
+def test_prepare_validation(state):
+    state.force_diagnose = True
+    with setup_workspace():
+        update_bash_history_info()
+        prepare_validation(state, ["ls", "echo abc"])
+        has_command(state, "ls", "good job")
+        has_command(state, "echo.*c", "well done")
