@@ -194,6 +194,8 @@ def prepare_validation(
 ) -> State:
     """Let the exercise validation know what shell commands are required to complete the exercise
 
+    Import using ``from protowhat.checks import prepare_validation``.
+
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
         commands: List of strings that a student is expected to execute

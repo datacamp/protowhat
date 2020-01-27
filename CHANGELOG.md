@@ -2,6 +2,10 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 2.0.1
+
+- Expose `prepare_validation` from `protowhat.checks`
+
 ## 2.0.0
 
 - Refactor SCT syntax to be an execution graph and enable derived features

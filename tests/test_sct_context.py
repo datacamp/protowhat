@@ -27,7 +27,7 @@ def test_get_checks_dict_package():
     assert isinstance(sct_dict, dict)
     assert sct_dict == {
         str(sct.__name__): sct
-        for sct in [checks.get_bash_history, checks.update_bash_history_info]
+        for sct in [checks.get_bash_history, checks.update_bash_history_info, checks.prepare_validation]
     }  # other checks not exported in init
 
 
