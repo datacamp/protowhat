@@ -8,8 +8,8 @@ deploy:
   user: datacamp
   password:
     secure: DWKfu6NnRniqvMK83pUtujNsZ0fIbGh1fcwGyOIx28kk/sC0Q0aR+rSuaBwxsNv+GXIkXJP4cqDwu+6Neo5SAnkoRQZy48iFBUyrh9eaLT5DeuhctSX82Tvv8Q5yLeq9fLQSbZeQulC5D8trTspbLmvLgv2pRzZTKkcdPEhkFB2uIjKL/vcr2814n94ovZBBfP5pGZnhktZehMcmfOlIAezEfkACDOfcL5gEIzaigZd0jJaqcahMS0ahHjsUQ5A/vVoE+lrv9y3r7etnjnBZMhB6FbvBVhKTNiaGMUHcr/g/Q1iTCjk6zRBiC1i0pwhhJfOmUSi9Kb6IQJyAx+C7o4yZAFs3c9tr69cqq2JP2hstzbOUbMxH+hEXfZyKOYVubVmWIxDuRbUxgaBMsCsL2ia15teQM2YKj2NosuuU1x6UA3Ay4XQ9jaLsahb4h6lMJ2wQ0xFIkr4l4APDkZGmG7Xjy0ZTvuHjVOY1b6R01jDIQs5BBczpFpFz7p6hE1YLS64JgAEYP5rnq1HqgUzzmGM8fZkh9lr2VPS4hpAOZPzjjZWL2Wmd25zOp5kL2MzCba1zFBPZbn6enbVs41sPRdahk48n8PUUi/BsGe4jyHGXaPMf2rqW4j1gAVGK1tJYYr3U2ES/s+ZPrEDKs916nbMeRBZCFd42UW2CJ9KngTI=
+  distributions: sdist bdist_wheel
   on:
     tags: true
-    distributions: sdist bdist_wheel
     repo: datacamp/protowhat
   skip_upload_docs: true
