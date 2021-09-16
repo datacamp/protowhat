@@ -129,14 +129,14 @@ def test_check_no_sol(state, temp_file):
 def test_check_file_missing(state):
     with pytest.raises(TF) as exception:
         cf.check_file(state, "foo")
-    assert "Did you create the file" in str(exception)
+    assert "Did you create the file" in str(exception.value)
 
 
 def test_check_file_dir(state):
     with pytest.raises(TF) as exception:
         with TemporaryDirectory() as td:
             cf.check_file(state, td)
-    assert "found a directory" in str(exception)
+    assert "found a directory" in str(exception.value)
 
 
 def test_check_file_not_readable(state, temp_file_unicode):
@@ -153,7 +153,7 @@ def test_check_dir(state):
 def test_missing_check_dir(state):
     with pytest.raises(TF) as exception:
         cf.has_dir(state, "foo")
-    assert "Did you create a directory" in str(exception)
+    assert "Did you create a directory" in str(exception.value)
 
 
 def test_check_file_fchain(state, temp_file):

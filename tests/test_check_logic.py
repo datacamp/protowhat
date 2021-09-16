@@ -85,7 +85,6 @@ def test_check_correct_fail_msg(state):
         cl.check_correct(state, f1, f2)
 
 
-@pytest.mark.debug
 def test_check_correct_fail_multi_msg(state):
     f1, f2, f3 = [partial(fails, msg="f%s" % ii) for ii in range(1, 4)]
     with pytest.raises(TF, match="f2"):

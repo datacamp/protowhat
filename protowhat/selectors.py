@@ -1,5 +1,5 @@
 from typing import TypeVar, Generic, Union, List, Dict, Tuple
-from collections import Mapping
+from collections.abc import Mapping
 from ast import NodeVisitor
 import inspect
 import importlib

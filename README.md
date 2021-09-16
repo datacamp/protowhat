@@ -14,14 +14,15 @@
 ## Installation
 
 ```
-pip install protowhat   # install from pypi
+pyenv local 3.9.0
+pip3.9 install protowhat   # install from pypi
 make install            # install from source
 ```
 
 ## Testing
 
 ```
-pip install -e .
+pip3.9 install -e .
 pytest
 ```
 

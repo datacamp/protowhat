@@ -2,6 +2,11 @@
 
 All notable changes to the protowhat project will be documented in this file.
 
+## 2.1.0
+
+- Support Python version 3.9
+- Update dependencies to up-to-date versions
+
 ## 2.0.1
 
 - Expose `prepare_validation` from `protowhat.checks`
