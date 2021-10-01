@@ -3,20 +3,20 @@ import pytest
 from protowhat.selectors import Selector, get_ord, DispatcherInterface, Dispatcher
 
 # use python's builtin ast library
-from ast import AST, Expr, Num
+from ast import AST, Expr, Constant
 
-Num._priority = 1
+Constant._priority = 1
 
 
 @pytest.fixture
 def node():
-    return Expr(value=Num(n=1))
+    return Expr(value=Constant(n=1))
 
 
 def test_selector_standalone(node):
-    sel = Selector(Num)
+    sel = Selector(Constant)
     sel.visit(node)
-    assert isinstance(sel.out[0], Num)
+    assert isinstance(sel.out[0], Constant)
 
     sel = Selector(Expr)
     sel.visit(node)
@@ -44,11 +44,11 @@ def test_dispatcher_path_str_to_list(path_str, path_list):
 
 
 def test_dispatcher_find(node):
-    assert isinstance(Dispatcher(AST).find("Num", node)[0], Num)
+    assert isinstance(Dispatcher(AST).find("Constant", node)[0], Constant)
 
 
 def test_dispatcher_select(node):
-    assert isinstance(Dispatcher(AST).select("value", node), Num)
+    assert isinstance(Dispatcher(AST).select("value", node), Constant)
 
 
 @pytest.mark.parametrize("num, ord", [(1, "first"), (12, "12th"), (23, "23rd")])

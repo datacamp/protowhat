@@ -69,7 +69,7 @@ class Feedback:
 
     def get_message(self):
         out_list = []
-        msgs = [*filter(None.__ne__, self.context_components), self.conclusion]
+        msgs = [*filter(lambda x: x is not None, self.context_components), self.conclusion]
 
         if not self.conclusion.append:
             msgs = msgs[-1:]
