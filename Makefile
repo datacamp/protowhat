@@ -7,8 +7,8 @@ commands :
 	@grep -h -E '^##' Makefile | sed -e 's/## //g'
 
 install:
-	pip3.9 install -e .
-	pip3.9 install -r requirements.txt
+	pip3.10 install -e .
+	pip3.10 install -r requirements.txt
 
 ## test     : run tests.
 test :
