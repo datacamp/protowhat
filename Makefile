@@ -13,7 +13,6 @@ install:
 ## test     : run tests.
 test :
 	pytest --cov=protowhat
-	codecov
 
 ## clean    : clean up junk files.
 clean :

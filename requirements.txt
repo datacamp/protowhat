@@ -1,10 +1,10 @@
 # protowhat deps
 markdown2~=2.3.10
 jinja2~=2.11.3
+markupsafe==2.0.1
 
 # test deps
 pytest~=6.2.5
-codecov~=2.1.12
 pytest-cov~=2.12.1
 bashlex~=0.15
 
