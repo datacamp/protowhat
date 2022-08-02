@@ -93,7 +93,8 @@ class Feedback:
                 out = Template(msg.message.replace("__JINJA__:", "")).render(tmp_kwargs)
                 out_list.append(out)
 
-        return "".join(out_list)
+        stripped_messages = [s.strip() for s in out_list]
+        return " ".join(stripped_messages)
 
     def __repr__(self):
         return "<{} {}>".format(self.__class__.__name__, repr(vars(self)))
