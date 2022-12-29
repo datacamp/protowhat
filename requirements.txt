@@ -1,5 +1,6 @@
 # protowhat deps
-markdown2~=2.3.10
+markdown2==2.4.6
+Pygments==2.13.0
 jinja2~=2.11.3
 markupsafe==2.0.1
 
