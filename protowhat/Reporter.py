@@ -95,4 +95,8 @@ class Reporter(TestRunnerProxy):
 
     @staticmethod
     def to_html(msg):
-        return re.sub("<p>(.*)</p>", "\\1", markdown2.markdown(msg)).strip()
+        return re.sub(
+            "<p>(.*)</p>",
+            "\\1",
+            markdown2.markdown(msg, extras=["fenced-code-blocks", "code-friendly"]),
+        ).strip()

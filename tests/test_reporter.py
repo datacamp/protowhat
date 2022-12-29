@@ -145,3 +145,39 @@ def test_highlighting_path_no_position():
     expected_payload = {"correct": False, "message": "msg", "path": "test.py"}
 
     assert payload == expected_payload
+
+
+def test_reporter_code_block():
+    r = Reporter()
+    msg = "Expected \n```\n{{sol_str}}\n```\n, but got \n```\n{{stu_str}}\n```\n"
+    code = """
+while True:
+    car_wash_num += 1
+
+    # Get the current simulation time and clock-in the process time
+    yield env.timeout(5)"""
+    fmt_kwargs = {"sol_str": code, "stu_str": code}
+    f = Feedback(FeedbackComponent(msg, fmt_kwargs))
+
+    payload = r.build_failed_payload(f)
+    expected_message = """Expected 
+
+<pre><code>
+while True:
+    car_wash_num += 1
+
+    # Get the current simulation time and clock-in the process time
+    yield env.timeout(5)
+</code></pre>
+
+, but got 
+
+<pre><code>
+while True:
+    car_wash_num += 1
+
+    # Get the current simulation time and clock-in the process time
+    yield env.timeout(5)
+</code></pre>"""
+
+    assert payload["message"] == expected_message
