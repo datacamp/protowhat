@@ -93,7 +93,7 @@ as it only has access to the latest commands
 
 
 def has_command(state, pattern, msg, fixed=False, commands=None):
-    """Test whether the bash history has a command matching the pattern
+    r"""Test whether the bash history has a command matching the pattern
 
     Args:
         state: State instance describing student and solution code. Can be omitted if used with Ex().
