@@ -1,8 +1,8 @@
 # protowhat deps
-markdown2==2.4.6
+markdown2==2.4.13
 Pygments==2.13.0
-jinja2~=2.11.3
-markupsafe==2.0.1
+jinja2~=3.1.2
+markupsafe==2.1.3
 
 # test deps
 pytest~=6.2.5
