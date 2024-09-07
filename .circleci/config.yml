@@ -11,7 +11,7 @@ jobs:
       - checkout
       - run:
           name: Install packages
-          command: make install
+          command: make install-test
       - run:
           name: Run tests
           command: python -m pytest --cov=protowhat
