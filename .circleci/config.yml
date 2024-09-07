@@ -29,10 +29,7 @@ jobs:
 workflows:
   build:
     jobs:
-      - build-and-test:
-          filters:
-            tags:
-              only: /^v\d+\.\d+\.\d+$/
+      - build-and-test
       - publish:
           requires:
             - build-and-test
