@@ -10,6 +10,10 @@ install:
 	pip3.9 install -e .
 	pip3.9 install -r requirements.txt
 
+install-test:
+	pip3.9 install -e .
+	pip3.9 install -r requirements-test.txt
+
 ## test     : run tests.
 test :
 	pytest --cov=protowhat

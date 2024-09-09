@@ -1,14 +1,4 @@
-# protowhat deps
-markdown2==2.4.6
+markdown2==2.4.13
 Pygments==2.13.0
-jinja2~=2.11.3
-markupsafe==2.0.1
-
-# test deps
-pytest~=6.2.5
-pytest-cov~=2.12.1
-bashlex~=0.15
-
-# building documentation
-sphinx~=4.1.2
-sphinx_rtd_theme~=0.5.2
+jinja2~=3.1.2
+markupsafe==2.1.3
