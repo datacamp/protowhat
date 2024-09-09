@@ -27,9 +27,20 @@ jobs:
             pipenv install twine
             pipenv run twine upload --verbose --repository pypi dist/*
 workflows:
-  build:
+  pr:
     jobs:
-      - build-and-test
+      - build-and-test:
+          filters:
+            branches:
+              ignore: master
+  publish:
+    jobs:
+      - build-and-test:
+          filters:
+            tags:
+              only: /^v\d+\.\d+\.\d+$/
+            branches:
+              ignore: /.*/
       - publish:
           requires:
             - build-and-test
