@@ -10,7 +10,7 @@ Constant._priority = 1
 
 @pytest.fixture
 def node():
-    return Expr(value=Constant(n=1))
+    return Expr(value=Constant(value=1))
 
 
 def test_selector_standalone(node):

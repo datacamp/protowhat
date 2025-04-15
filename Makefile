@@ -7,12 +7,12 @@ commands :
 	@grep -h -E '^##' Makefile | sed -e 's/## //g'
 
 install:
-	pip3.9 install -e .
-	pip3.9 install -r requirements.txt
+	pip3.12 install -e .
+	pip3.12 install -r requirements.txt
 
 install-test:
-	pip3.9 install -e .
-	pip3.9 install -r requirements-test.txt
+	pip3.12 install -e .
+	pip3.12 install -r requirements-test.txt
 
 ## test     : run tests.
 test :
